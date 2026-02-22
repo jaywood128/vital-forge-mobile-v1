@@ -1,50 +1,76 @@
-# Welcome to your Expo app 👋
+# Vital Forge Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native mobile app for Vital Forge fitness tracking.
 
-## Get started
+## Getting started (Mac)
 
-1. Install dependencies
+For a full local development guide—required software (Node, Xcode, Android Studio), links, and how to run on iOS Simulator, Android Emulator, device, or web—see **[GETTING_STARTED.md](./GETTING_STARTED.md)**.
 
+## Quick setup
+
+1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-2. Start the app
+2. **Configure API URL** (in `.env`):
+   - Set `EXPO_PUBLIC_API_URL` (e.g. to staging or your local Rails server)
 
+3. **Run the app**:
    ```bash
-   npx expo start
+   npm start
+   ```
+   Then press **`i`** (iOS Simulator), **`a`** (Android Emulator), or **`w`** (web), or scan the QR code with Expo Go on your phone.
+
+4. **Optional**: If you see a missing module for AsyncStorage, run:
+   ```bash
+   npm install @react-native-async-storage/async-storage
    ```
 
-In the output, you'll find options to open the app in a
+## Project Structure
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+```
+src/
+├── store/              # Redux store configuration
+├── features/           # Feature-based modules (auth, workouts, templates)
+│   ├── auth/
+│   ├── workouts/
+│   └── templates/
+├── lib/
+│   └── api/           # API base query (JWT + CSRF handling)
+├── navigation/        # (Future) Navigation config
+├── components/        # Shared UI components
+└── types/            # TypeScript types
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+app/                   # Expo Router screens
+├── index.tsx         # Welcome/splash screen
+├── login.tsx         # Login screen
+└── home.tsx          # Home screen
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Current Features
 
-## Learn more
+- ✅ Login screen with API connectivity
+- ✅ JWT token storage (AsyncStorage)
+- ✅ Redux Toolkit + RTK Query setup
+- ✅ Auth API integration
+- 🚧 Workout templates (API ready)
+- 🚧 Workout logger
+- 🚧 History view
 
-To learn more about developing your project with Expo, look at the following resources:
+## Next Steps
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Test login flow with staging API
+2. Build workout template selection screen
+3. Build workout logger with set tracking
+4. Add workout completion summary
 
-## Join the community
+## API
 
-Join our community of developers creating universal apps.
+Uses same Rails API as web app:
+- Staging: https://api-staging.forge-fitness-journal.app
+- Endpoints: /api/v1/mobile/*
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Testing
+
+Login with your existing account or create one on the web app first.
