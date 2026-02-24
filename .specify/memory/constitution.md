@@ -1,0 +1,65 @@
+<!--
+Sync Impact Report
+- Version change: (none) → 1.0.0 (initial ratification)
+- Modified principles: N/A (initial fill from template)
+- Added sections: Technology Stack, Development Workflow (replacing generic SECTION_2/SECTION_3)
+- Removed sections: None
+- Templates: ✅ .specify/templates/plan-template.md (Constitution Check already references constitution file); ✅ spec-template.md (no changes); ✅ tasks-template.md (no changes)
+- Follow-up TODOs: None
+-->
+
+# Vital Forge Mobile Constitution
+
+## Core Principles
+
+### I. Design System (NON-NEGOTIABLE)
+
+All colors MUST come from `src/theme/colors.ts`. No hardcoded hex values in screens or components. Use spacing, radius, typography, and shadow tokens from `src/theme/` for all layout values. Static styles in `StyleSheet.create`; inline styles only for truly dynamic (runtime-computed) values. There is no Tailwind and no CSS in this repo.
+
+### II. Component Architecture
+
+All reusable UI MUST live in `src/components/ui/` (Screen, Card, Button, TextField). New screens in `app/` MUST use these primitives before reaching for raw React Native components. Screens are layout/orchestration only — no business logic embedded in JSX. The `Button` component MUST use one of three variants: `primary` (orange), `secondary` (blue outline), `destructive` (red outline).
+
+### III. Navigation — Expo Router Only
+
+All routes are file-based in the `app/` directory. No manual navigator setup. Use `useRouter` from `expo-router` for programmatic navigation. Do not import React Navigation directly. The auth guard lives in `app/_layout.tsx`.
+
+### IV. State Management — RTK Query + Redux
+
+All server data MUST be fetched and cached via RTK Query slices in `src/features/<domain>/`. API slices MUST use the shared `src/lib/api/baseQuery.ts`, which attaches the JWT from SecureStore. Global client state (non-server) may use Redux slices in `src/store/`. Do not use local `useState` for server data — always RTK Query.
+
+### V. Auth — JWT in SecureStore, No CSRF
+
+The JWT MUST be stored in and read from `expo-secure-store` under the `authToken` key. Never store the auth token in AsyncStorage. `expo-secure-store` uses iOS Keychain and Android Keystore (hardware-backed encryption on supported devices). The mobile API base is `/api/v1/mobile/*`; do not call `/api/v1/` (web) endpoints. No CSRF header is needed; this is a JWT-authenticated client. On logout: call the logout endpoint, then call `SecureStore.deleteItemAsync('authToken')` regardless of API result.
+
+### VI. Platform Behavior — Touch, Keyboard, iOS/Android
+
+All interactive elements MUST have a minimum touch target of 44×44 pt (`spacing.touchMin = 44`). There are no `:hover` styles; use `Pressable`'s `pressed` state for visual feedback. Form screens MUST wrap content in `KeyboardAvoidingView` with `behavior="padding"` (iOS) or `"height"` (Android) via `Platform.select`. Use `Platform.select` for any iOS vs Android style or behavior divergence; do not use raw `Platform.OS` string checks outside of a `Platform.select` call.
+
+### VII. Long Lists — FlatList Only
+
+Never use `.map()` inside a `ScrollView` for variable-length data. Use `FlatList` (or `SectionList` for grouped data) for all lists that may exceed approximately 20 items.
+
+### VIII. TypeScript — Strict
+
+`strict: true` is enabled. No implicit `any`. The type `any` is permitted only in `catch (error: any)` error-handling blocks. API response types MUST be explicitly defined (see `authApi.ts` as the reference pattern).
+
+## Technology Stack
+
+- **Runtime**: React Native 0.81 via Expo SDK 54
+- **Navigation**: Expo Router 6 (file-based)
+- **State / data**: Redux Toolkit + RTK Query
+- **Styling**: `StyleSheet.create` + `src/theme/` tokens
+- **Gradients**: `expo-linear-gradient`
+- **Token storage**: `expo-secure-store` (iOS Keychain / Android Keystore)
+- **Language**: TypeScript 5.9 strict
+
+## Development Workflow
+
+Branch from `development`; merge to `development` via PR; `staging` is promoted from `development`; `main` is production-only. No hardcoded secrets or API URLs in source — use `EXPO_PUBLIC_*` env vars via `.env`. Run `npx expo start --clear` when changing native dependencies or after installing new packages. New native packages MUST be installed with `npx expo install <pkg>` (not bare `npm install`) to ensure SDK version compatibility.
+
+## Governance
+
+This constitution supersedes all other practices. When in conflict, the constitution wins. All PRs MUST verify compliance with Principles I–VIII. Amendments require: (1) documented rationale, (2) update to this constitution, (3) migration of existing code where applicable. The single source of truth for design tokens is `src/theme/`; any palette change starts there and propagates.
+
+**Version**: 1.0.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-02-06

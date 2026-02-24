@@ -1,6 +1,6 @@
 import { Text, StyleSheet, Alert } from 'react-native';
 import { useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import { spacing, typography } from '../src/theme';
 import { Screen, Card, Button } from '../src/components/ui';
@@ -15,7 +15,7 @@ export default function HomeScreen() {
       await logout().unwrap();
     } catch {}
     try {
-      await AsyncStorage.removeItem('authToken');
+      await SecureStore.deleteItemAsync('authToken');
     } catch {}
     Alert.alert('Logged out', 'You have been logged out.');
     router.replace('/login');

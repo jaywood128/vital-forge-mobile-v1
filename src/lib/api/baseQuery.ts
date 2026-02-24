@@ -1,13 +1,13 @@
 import { fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 // NOTE:
 // RTK Query's `prepareHeaders` is effectively synchronous; an async function there
-// can result in headers not being applied. For React Native we need AsyncStorage,
-// so we attach headers in this wrapper baseQuery instead.
+// can result in headers not being applied. We attach the JWT in this wrapper
+// baseQuery instead, reading from SecureStore (iOS Keychain / Android Keystore).
 //
-// Also: mobile endpoints in this Rails app skip CSRF (`Api::V1::Mobile::BaseController`),
+// Mobile endpoints in this Rails app skip CSRF (`Api::V1::Mobile::BaseController`),
 // so we do not send/fetch CSRF tokens here.
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
@@ -20,7 +20,7 @@ export const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryE
 ) => {
   let token: string | null = null;
   try {
-    token = await AsyncStorage.getItem('authToken');
+    token = await SecureStore.getItemAsync('authToken');
   } catch {
     token = null;
   }
