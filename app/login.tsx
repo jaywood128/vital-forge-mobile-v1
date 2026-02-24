@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLoginMutation } from '../src/features/auth/authApi';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, spacing, radius, typography } from '../src/theme';
+import * as SecureStore from 'expo-secure-store';
+import { colors, spacing, typography } from '../src/theme';
 import { Card, Button, TextField } from '../src/components/ui';
 
 export default function LoginScreen() {
@@ -22,7 +22,7 @@ export default function LoginScreen() {
     try {
       const result = await login({ email, password }).unwrap();
       if (result.token) {
-        await AsyncStorage.setItem('authToken', result.token);
+        await SecureStore.setItemAsync('authToken', result.token);
       }
       router.replace('/home');
     } catch (error: any) {
