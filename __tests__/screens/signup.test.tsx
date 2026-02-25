@@ -151,13 +151,17 @@ describe('SignupScreen', () => {
       expect(await findByText(/do not match/i)).toBeTruthy();
     });
 
-    // STUB: Verify that a short phone number shows an inline error.
-    //
-    // Scenario: User fills all fields correctly but enters only "123" as their phone number.
-    // Expected outcome: An inline phone error message appears. signup() is NOT called.
-    // Hint: Fill all other fields with valid data (use the pattern from the email test above).
-    //       Set phone to '123', press Sign Up, then findByText(/digit/i) or /10 digit/i.
-    //       Assert mockSignupFn was not called.
-    it.todo('shows inline error when phone number is too short');
+    it('shows inline error when phone number is too short', async () => {
+      const { getByPlaceholderText, getByText, findByText } = renderSignup();
+      fireEvent.changeText(getByPlaceholderText('First Name'), 'John');
+      fireEvent.changeText(getByPlaceholderText('Last Name'), 'Doe');
+      fireEvent.changeText(getByPlaceholderText('Email'), 'john@example.com');
+      fireEvent.changeText(getByPlaceholderText('Phone number (required)'), '123');
+      fireEvent.changeText(getByPlaceholderText('Password'), 'Password1!');
+      fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'Password1!');
+      fireEvent.press(getByText('Sign Up'));
+      expect(await findByText(/digit/i)).toBeTruthy();
+      expect(mockSignupFn).not.toHaveBeenCalled();
+    });
   });
 });
