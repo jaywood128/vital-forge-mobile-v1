@@ -105,21 +105,44 @@ describe('preferencesApi', () => {
       );
     });
 
-    // STUB: Test createUserPreference when the API returns a 422 validation error.
-    //
-    // Scenario: The server rejects the preference data (e.g., invalid goal_type value).
-    // Expected outcome: The mutation result has `error` defined and `data` is undefined.
-    // Hint: Make mockBaseQuery return { error: { status: 422, data: { errors: { primary_goal: ['is not included in the list'] } } } }
-    //       Then assert that result.error exists and result.data is undefined.
-    it.todo('returns an error result when the API responds with 422');
+    it('returns an error result when the API responds with 422', async () => {
+      mockBaseQuery.mockResolvedValueOnce({
+        error: {
+          status: 422,
+          data: { errors: { primary_goal: ['is not included in the list'] } },
+        },
+      });
+      const store = makeStore();
 
-    // STUB: Test updateUserPreference with only a partial body (just training_days_per_week).
-    //
-    // Scenario: A user changes only their training days without touching goal or difficulty.
-    // Expected outcome: The PATCH request body contains only the changed field, not the full object.
-    // Hint: Call preferencesApi.endpoints.updateUserPreference.initiate({ training_days_per_week: 6 })
-    //       and assert mockBaseQuery was called with method: 'PATCH' and body containing only that field.
-    it.todo('updateUserPreference sends only the provided partial fields in the PATCH body');
+      const result = await store.dispatch(
+        preferencesApi.endpoints.createUserPreference.initiate({
+          primary_goal: 'physique',
+          training_days_per_week: 4,
+        })
+      );
+
+      expect((result as any).error).toBeDefined();
+      expect((result as any).data).toBeUndefined();
+    });
+
+    it('updateUserPreference sends only the provided partial fields in the PATCH body', async () => {
+      mockBaseQuery.mockResolvedValueOnce({ data: { data: mockPreference } });
+      const store = makeStore();
+
+      await store.dispatch(
+        preferencesApi.endpoints.updateUserPreference.initiate({ training_days_per_week: 6 })
+      );
+
+      expect(mockBaseQuery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: '/api/v1/user_preference',
+          method: 'PATCH',
+          body: { user_preference: { training_days_per_week: 6 } },
+        }),
+        expect.anything(),
+        undefined
+      );
+    });
   });
 
   describe('getUserPreference', () => {
