@@ -74,7 +74,7 @@ export default function SignupScreen() {
       if (result.token) {
         await SecureStore.setItemAsync('authToken', result.token);
       }
-      router.replace('/home');
+      router.replace('/goal-selection');
     } catch (error: any) {
       const errors = error?.data?.errors as Record<string, string[]> | undefined;
       const firstError =
