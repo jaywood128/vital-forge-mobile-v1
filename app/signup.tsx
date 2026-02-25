@@ -2,7 +2,11 @@ import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, P
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSelector, useDispatch } from 'react-redux';
 import { useSignupMutation } from '../src/features/auth/authApi';
+import { useCreateUserPreferenceMutation } from '../src/features/preferences/preferencesApi';
+import { clearOnboarding } from '../src/store/onboardingSlice';
+import type { RootState } from '../src/store/store';
 import * as SecureStore from 'expo-secure-store';
 import { colors, spacing, typography } from '../src/theme';
 import { Card, Button, TextField } from '../src/components/ui';
@@ -28,6 +32,9 @@ export default function SignupScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [signup, { isLoading }] = useSignupMutation();
+  const [createUserPreference] = useCreateUserPreferenceMutation();
+  const dispatch = useDispatch();
+  const onboarding = useSelector((state: RootState) => state.onboarding);
   const router = useRouter();
 
   const handlePhoneChange = (value: string) => {
@@ -74,6 +81,20 @@ export default function SignupScreen() {
       if (result.token) {
         await SecureStore.setItemAsync('authToken', result.token);
       }
+
+      // Fire-and-forget: save onboarding preferences in the background.
+      // Failure here must NOT block navigation to the dashboard (FR-004).
+      if (onboarding.goal_type || onboarding.training_days_per_week) {
+        createUserPreference({
+          ...(onboarding.goal_type && { primary_goal: onboarding.goal_type }),
+          ...(onboarding.training_days_per_week && { training_days_per_week: onboarding.training_days_per_week }),
+          ...(onboarding.experience_level && { experience_level: onboarding.experience_level }),
+        }).catch(() => {
+          // Preference save failed silently — user can update from profile settings
+        });
+      }
+
+      dispatch(clearOnboarding());
       router.replace('/home');
     } catch (error: any) {
       const errors = error?.data?.errors as Record<string, string[]> | undefined;
