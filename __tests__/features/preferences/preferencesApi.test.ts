@@ -29,6 +29,11 @@ const mockPreference = {
   updated_at: '2026-02-24T00:00:00Z',
 };
 
+// RTK Query schedules subscription cleanup via setTimeout after each dispatch.
+// Fake timers prevent those callbacks from firing after Jest tears down the environment.
+beforeAll(() => jest.useFakeTimers());
+afterAll(() => jest.useRealTimers());
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
