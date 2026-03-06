@@ -58,8 +58,17 @@ Never use `.map()` inside a `ScrollView` for variable-length data. Use `FlatList
 
 Branch from `development`; merge to `development` via PR; `staging` is promoted from `development`; `main` is production-only. No hardcoded secrets or API URLs in source — use `EXPO_PUBLIC_*` env vars via `.env`. Run `npx expo start --clear` when changing native dependencies or after installing new packages. New native packages MUST be installed with `npx expo install <pkg>` (not bare `npm install`) to ensure SDK version compatibility.
 
+## Testing Policy
+
+Approximately 80% of tests for each feature MUST be fully implemented. The remaining ~20% MUST be left as scaffolded test stubs — a `it.todo` or `it` block with a descriptive English comment explaining exactly what the test should assert and why. Scaffolded stubs MUST:
+
+- Be left on the most instructive cases: edge cases, async flows, error states, and any test that requires understanding a non-obvious pattern
+- Include a comment written in plain English describing: (1) what scenario is being tested, (2) what the expected outcome is, and (3) any hint about the key assertion or mock needed
+
+This is intentional — the incomplete tests are for the developer to learn by completing them. Never skip writing the stub entirely; a labelled, commented stub is required for every incomplete test.
+
 ## Governance
 
 This constitution supersedes all other practices. When in conflict, the constitution wins. All PRs MUST verify compliance with Principles I–VIII. Amendments require: (1) documented rationale, (2) update to this constitution, (3) migration of existing code where applicable. The single source of truth for design tokens is `src/theme/`; any palette change starts there and propagates.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-02-06
+**Version**: 1.1.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-02-24

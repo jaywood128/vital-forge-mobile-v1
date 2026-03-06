@@ -7,6 +7,7 @@ import { userPreferenceApi } from '../features/userPreference/userPreferenceApi'
 
 export const store = configureStore({
   reducer: {
+    onboarding: onboardingReducer,
     [authApi.reducerPath]: authApi.reducer,
     [workoutsApi.reducerPath]: workoutsApi.reducer,
     [templatesApi.reducerPath]: templatesApi.reducer,

@@ -2,7 +2,11 @@ import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, P
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSelector, useDispatch } from 'react-redux';
 import { useSignupMutation } from '../src/features/auth/authApi';
+import { useCreateUserPreferenceMutation } from '../src/features/preferences/preferencesApi';
+import { clearOnboarding } from '../src/store/onboardingSlice';
+import type { RootState } from '../src/store/store';
 import * as SecureStore from 'expo-secure-store';
 import { colors, spacing, typography } from '../src/theme';
 import { Card, Button, TextField } from '../src/components/ui';
@@ -28,6 +32,9 @@ export default function SignupScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [signup, { isLoading }] = useSignupMutation();
+  const [createUserPreference] = useCreateUserPreferenceMutation();
+  const dispatch = useDispatch();
+  const onboarding = useSelector((state: RootState) => state.onboarding);
   const router = useRouter();
   const confirmPasswordRef = useRef<TextInput>(null);
 
