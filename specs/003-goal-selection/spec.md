@@ -1,128 +1,99 @@
-# Feature Specification: Pre-Registration Onboarding
+# Feature Specification: Optional Goal Selection
 
 **Feature Branch**: `003-goal-selection`
-**Created**: 2026-02-24
+**Created**: 2026-02-06
 **Status**: Draft
-
-## Overview
-
-Before creating an account, a user browses real workout programs filtered to their goal and schedule. By the time the registration form appears, they have already chosen their program — making sign-up feel like a natural next step rather than a gate. The flow is six screens:
-
-1. **Landing** — value proposition, single CTA
-2. **Goal Type** — Physique & Aesthetics or Strength & Power
-3. **Training Days** — how many days per week they can train (3–6)
-4. **Template List** — filtered programs matching their selections
-5. **Template Preview** — full exercise detail, "Start This Program" CTA
-6. **Registration Form** — account creation, which hands off to `002-post-reg-flow`
-
-No account or login is required for screens 1–5.
+**Input**: User description: "REQ-GOAL-001: Optional Goal Selection During Onboarding — goal selection screen after registration with four options (Build Muscle, Lose Fat, Get Stronger, General Fitness), Skip for now button with equal visual weight, no features locked by goal, goal changeable from profile settings."
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Browse Without an Account (Priority: P1)
+### User Story 1 - New User Selects a Goal (Priority: P1)
 
-A visitor opens the app and can browse and preview real workout programs — without creating an account or being prompted to log in.
+A new user who just registered is presented with a goal selection screen. They choose a goal that matches their intent, the selection is saved, and they move on to the template list.
 
-**Why this priority**: Showing value before asking for commitment is the single highest-leverage step in the onboarding funnel. A user who has seen their program before registering has a reason to create an account.
+**Why this priority**: This is the primary purpose of the screen. Capturing the user's goal at the start enables personalised recommendations in future and ensures the feature delivers its core value on day one.
 
-**Independent Test**: A new visitor opens the app, picks a goal type and training days, sees a filtered program list, opens a program detail, and reads the full exercise breakdown — all without a login prompt.
+**Independent Test**: A new user can arrive at the goal selection screen, tap one of the four goal cards, and be taken to the template list with their goal recorded — this alone demonstrates the feature works end to end.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor opens the app, **When** they tap "Find Your Program", **Then** the Goal Type screen appears with no login prompt.
-2. **Given** a visitor completes goal and day selection, **When** the Template List loads, **Then** it shows programs filtered to their selections — without requiring an account.
-3. **Given** a visitor taps a program, **When** the Template Preview loads, **Then** they see the complete exercise list — including sets, reps, rest time, and notes — without logging in.
+1. **Given** a user has just registered, **When** they arrive on the goal selection screen, **Then** exactly four goal options are displayed as tappable cards: "Build Muscle", "Lose Fat", "Get Stronger", and "General Fitness" — each with a title and a brief description.
+2. **Given** a user is on the goal selection screen, **When** they tap a goal card, **Then** their selected goal is saved to their profile and they are advanced to the template list.
+3. **Given** a user has selected a goal, **When** they are redirected to the template list, **Then** they have full access to all features with no restrictions regardless of which goal was selected.
 
 ---
 
-### User Story 2 — Filter to a Matching Program (Priority: P1)
+### User Story 2 - New User Skips Goal Selection (Priority: P2)
 
-A visitor selects their goal type, then how many days per week they can train. The app responds immediately by showing only programs that match both selections.
+A new user who is unsure of their goal, or who just wants to explore first, taps "Skip for now" and goes directly to the template list with no restrictions.
 
-**Why this priority**: The filter steps are the core of the onboarding. If results don't match the user's actual schedule and goal, they'll pick the wrong program or drop off.
+**Why this priority**: Forcing goal selection — even optionally — creates abandonment risk if the skip path is hard to find. The skip option must be as easy to use as selecting a goal, making the choice genuinely optional.
+
+**Independent Test**: A new user can arrive at the goal selection screen, tap "Skip for now," and arrive at the template list with full feature access and no goal saved — this is a complete, independently testable path.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor selects "Physique & Aesthetics" and "4 days", **When** the Template List renders, **Then** only templates with `goal_type: physique` and `days_per_week: 4` are shown.
-2. **Given** a visitor also selects "Intermediate" as an optional difficulty filter, **When** the Template List updates, **Then** only templates matching all three criteria are shown.
-3. **Given** no templates match the current filters, **When** the Template List renders, **Then** an empty state with a "Try different filters" prompt is shown — not a blank screen or error.
-4. **Given** a visitor wants to change their goal type after reaching the Template List, **When** they navigate back, **Then** they can update their selection and the list re-filters without a full reload.
+1. **Given** a user is on the goal selection screen, **When** they look at the screen, **Then** a "Skip for now" option is clearly visible with equal visual prominence to the four goal cards — it is not hidden, greyed out, or in small text.
+2. **Given** a user is on the goal selection screen, **When** they tap "Skip for now", **Then** they are taken to the template list without a goal being saved to their profile.
+3. **Given** a user skipped goal selection, **When** they browse the template list or start a workout, **Then** they have full access to all features — nothing is locked or restricted due to the absence of a goal.
 
 ---
 
-### User Story 3 — Preview Full Program Detail (Priority: P1)
+### User Story 3 - User Changes Goal From Profile (Priority: P3)
 
-A visitor taps a program in the list and sees everything they need to decide if it is right for them — program overview, number of weeks, session duration estimate, and every exercise with its full detail.
+A user who set (or skipped) a goal during onboarding can change it at any time from their profile settings.
 
-**Why this priority**: A shallow preview that hides exercise detail creates doubt. Users need enough information to feel confident before they create an account.
+**Why this priority**: Goals change over time. Locking a user to their initial choice (or non-choice) would frustrate long-term users. This is lower priority than initial onboarding because it can be deferred until profile settings are built.
 
-**Acceptance Scenarios**:
-
-1. **Given** a visitor taps a program, **When** the Template Preview screen loads, **Then** they see: program name, goal type label, difficulty badge, days per week, estimated session duration, and total exercise count.
-2. **Given** the Template Preview is showing, **When** the visitor scrolls through the exercise list, **Then** each exercise shows: name, muscle group, equipment needed, recommended sets, recommended reps, rest time, and any coach notes.
-3. **Given** the Template Preview is showing, **When** the visitor taps "Start This Program", **Then** they are taken to the Registration Form — and the selected template ID, goal type, training days, and difficulty (if set) are all preserved in app state.
-
----
-
-### User Story 4 — Registration Carries Selections Forward (Priority: P1)
-
-When a visitor reaches the Registration Form by tapping "Start This Program", all of the selections they made during browsing are held in app state and passed to `002-post-reg-flow` after registration succeeds.
-
-**Why this priority**: If the selections are lost at registration, the user lands on a blank dashboard — undoing every positive moment in the onboarding flow.
+**Independent Test**: A user can navigate to their profile settings, select a different goal (or set one for the first time if they skipped), and have the change take effect immediately with no disruption to existing data.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor selected "Strength", "5 days", "Advanced", and the "5/3/1 Program", **When** registration completes, **Then** the post-registration flow receives all four values to save automatically.
-2. **Given** a visitor is on the Registration Form, **When** they background the app and return, **Then** their goal, days, difficulty, and selected template are still held in app state.
-3. **Given** a visitor navigates back from the Registration Form to change their program, **When** they select a different template and tap "Start This Program" again, **Then** the newly selected template replaces the previous one in app state.
+1. **Given** a user has already set a goal, **When** they navigate to profile settings and select a different goal, **Then** their goal is updated and the change takes effect immediately.
+2. **Given** a user skipped goal selection during onboarding, **When** they navigate to profile settings, **Then** they can set a goal for the first time.
+3. **Given** a user changes their goal, **When** the change is saved, **Then** no previously saved workouts, templates, or other data are altered or removed.
 
 ---
 
 ### Edge Cases
 
-- If the `GET /api/v1/workout_templates` call fails, the Template List shows an error message with a "Try Again" button — not a blank screen.
-- If the `GET /api/v1/workout_templates/:id` call fails, the Template Preview shows an error with a back button — not a crash.
-- If a visitor selects filters with no matching templates, the empty state is clear and actionable.
-- If a visitor navigates back through the filter steps, their previous selections are pre-filled.
+- What happens if a user taps a goal card, then uses the back button before the selection is confirmed — is the goal saved or discarded?
+- What happens if a user taps "Skip for now" and later comes back to the goal selection screen via the back button — can they still select a goal?
+- What happens if the goal selection screen fails to load — is the user stuck or automatically forwarded to the template list?
+- What happens if a user selects a goal, then immediately changes it in profile settings — does the most recent selection win?
 
 ## Assumptions
 
-- All template endpoints are public — no authentication required for screens 1–5.
-- Templates are fetched in a single `GET /api/v1/workout_templates` call. All filtering is done client-side using `goal_type`, `days_per_week`, and `difficulty_level`.
-- Goal type (required) and training days (required) must both be set before showing the Template List. Difficulty is optional.
-- Currently two goal types exist: Physique & Aesthetics (`physique`) and Strength & Power (`strength`). More will be added in future.
-- Training days options are 3, 4, 5, and 6. Values outside this range are not supported by the API.
-- Onboarding state (selections + chosen template) lives in a Redux slice and is cleared after registration completes.
+- The goal selection screen is shown once during onboarding after registration; it is not shown again automatically.
+- Goal selection is a standalone step, not part of a multi-step wizard that requires completion.
+- There are exactly four goal options; no custom goal entry is required in this version.
+- Goal data is stored on the user's profile and does not affect what content is visible or accessible in the MVP; it is retained for future personalisation.
+- The template list is the destination screen after goal selection or skipping; that screen is implemented separately.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Visitors MUST be able to reach the Template List and Template Preview without an account or any login prompt.
-- **FR-002**: The Goal Type screen MUST present exactly two options: Physique & Aesthetics and Strength & Power.
-- **FR-003**: The Training Days screen MUST present exactly four options: 3, 4, 5, and 6 days per week.
-- **FR-004**: The difficulty filter MUST be optional. Visitors who skip it MUST see all difficulty levels matching their goal and day selection.
-- **FR-005**: All workout templates MUST be fetched in a single API call (`GET /api/v1/workout_templates`). Filtering MUST be applied client-side.
-- **FR-006**: The Template List MUST show only programs matching all active filters.
-- **FR-007**: If no templates match the active filters, an empty state with guidance to adjust filters MUST be shown.
-- **FR-008**: The Template Preview MUST show: program name, goal type, difficulty, days per week, estimated session duration, total exercises, and the full exercise list with sets, reps, rest time, and notes per exercise.
-- **FR-009**: The Template Preview MUST include a "Start This Program" button.
-- **FR-010**: Tapping "Start This Program" MUST navigate to the Registration Form and preserve `goal_type`, `training_days_per_week`, `experience_level` (if set), and `selected_template_id` in app state.
-- **FR-011**: Navigating back through filter steps MUST preserve previously selected values.
-- **FR-012**: Onboarding state MUST persist if the user backgrounds the app mid-flow and returns.
+- **FR-001**: The goal selection screen MUST display exactly four goal options: "Build Muscle", "Lose Fat", "Get Stronger", and "General Fitness".
+- **FR-002**: Each goal option MUST be presented as a tappable card displaying the goal name and a brief description of that goal.
+- **FR-003**: A "Skip for now" option MUST be displayed on the screen with equal visual prominence to the four goal cards.
+- **FR-004**: Tapping a goal card MUST save the selected goal to the user's profile and advance the user to the template list.
+- **FR-005**: Tapping "Skip for now" MUST advance the user to the template list without saving a goal to their profile.
+- **FR-006**: No features, content, or screens MUST be locked, restricted, or hidden based on whether the user has a goal set.
+- **FR-007**: The user MUST be able to set or change their goal at any time from their profile settings.
+- **FR-008**: Changing a goal MUST NOT alter, remove, or affect any other data in the user's account (workouts, templates, history).
+- **FR-009**: The screen MUST include a back navigation option that returns the user to the previous screen.
 
 ### Key Entities
 
-- **Workout Template** (from API): `id`, `name`, `description`, `goal_type`, `difficulty_level`, `days_per_week`, `estimated_duration_minutes`, `total_exercises`, `source`
-- **Template Exercise** (from API): `order_position`, `recommended_sets`, `recommended_reps`, `rest_seconds`, `notes`, nested `exercise` with `name`, `muscle_group`, `equipment`, `exercise_type`, `instructions`
-- **Onboarding State** (Redux slice): `goal_type`, `training_days_per_week`, `experience_level` (nullable), `selected_template_id` (nullable). Cleared after registration succeeds.
+- **Fitness Goal**: Represents the user's self-reported primary fitness objective. One of four options: Build Muscle, Lose Fat, Get Stronger, General Fitness. Optional — a user's profile may have no goal set. Can be changed at any time. Stored on the user's profile.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: A visitor can reach the Template List in exactly 3 taps from the landing screen (Goal Type → Training Days → List).
-- **SC-002**: The Template List renders filtered results within 2 seconds of the visitor completing filter selection.
-- **SC-003**: 100% of "Start This Program" taps carry all active filter selections and the selected template ID into the Registration Form screen.
-- **SC-004**: 0% of filter combinations result in a blank or broken screen — an empty state is always shown when no results match.
-- **SC-005**: A visitor can read the full exercise detail for any program without an account.
+- **SC-001**: A user can select a goal and reach the template list in under 30 seconds from arriving on the goal selection screen.
+- **SC-002**: A user can skip goal selection and reach the template list in a single tap.
+- **SC-003**: 100% of users who skip goal selection have full access to all features with no restrictions.
+- **SC-004**: 100% of users who select a goal can change it from profile settings without any side effects on their existing data.
+- **SC-005**: The "Skip for now" option is immediately visible to users on first view of the screen, without scrolling or searching.

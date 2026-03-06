@@ -1,5 +1,5 @@
-import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
-import { useState } from 'react';
+import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform, TextInput } from 'react-native';
+import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSelector, useDispatch } from 'react-redux';
@@ -36,6 +36,8 @@ export default function SignupScreen() {
   const dispatch = useDispatch();
   const onboarding = useSelector((state: RootState) => state.onboarding);
   const router = useRouter();
+  const confirmPasswordRef = useRef<TextInput>(null);
+
 
   const handlePhoneChange = (value: string) => {
     const cleaned = value.replace(/[^\d\s\-\(\)\+]/g, '');
@@ -81,21 +83,7 @@ export default function SignupScreen() {
       if (result.token) {
         await SecureStore.setItemAsync('authToken', result.token);
       }
-
-      // Fire-and-forget: save onboarding preferences in the background.
-      // Failure here must NOT block navigation to the dashboard (FR-004).
-      if (onboarding.goal_type || onboarding.training_days_per_week) {
-        createUserPreference({
-          ...(onboarding.goal_type && { primary_goal: onboarding.goal_type }),
-          ...(onboarding.training_days_per_week && { training_days_per_week: onboarding.training_days_per_week }),
-          ...(onboarding.experience_level && { experience_level: onboarding.experience_level }),
-        }).catch(() => {
-          // Preference save failed silently — user can update from profile settings
-        });
-      }
-
-      dispatch(clearOnboarding());
-      router.replace('/home');
+      router.replace('/goal-selection');
     } catch (error: any) {
       const errors = error?.data?.errors as Record<string, string[]> | undefined;
       const firstError =
@@ -139,7 +127,10 @@ export default function SignupScreen() {
             <TextField
               placeholder="Email"
               value={email}
-              onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (emailError) setEmailError(null);
+              }}
               onBlur={() => { if (email && !validateEmail(email)) setEmailError('Enter a valid email address (e.g. name@example.com)'); }}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -162,16 +153,24 @@ export default function SignupScreen() {
               onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(null); if (confirmError) setConfirmError(null); }}
               onBlur={() => { if (password && password.length < 6) setPasswordError('Password must be at least 6 characters'); }}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+              onSubmitEditing={() => confirmPasswordRef.current?.focus()}
               style={passwordError ? styles.inputError : undefined}
             />
             {passwordError ? <Text style={styles.fieldError}>{passwordError}</Text> : null}
 
             <TextField
+              ref={confirmPasswordRef}
               placeholder="Confirm Password"
               value={passwordConfirmation}
               onChangeText={(v) => { setPasswordConfirmation(v); if (confirmError) setConfirmError(null); }}
               onBlur={() => { if (passwordConfirmation && password !== passwordConfirmation) setConfirmError('Passwords do not match'); }}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
               style={confirmError ? styles.inputError : undefined}
             />
             {confirmError ? <Text style={styles.phoneError}>{confirmError}</Text> : null}

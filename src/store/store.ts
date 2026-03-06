@@ -2,8 +2,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { authApi } from '../features/auth/authApi';
 import { workoutsApi } from '../features/workouts/workoutsApi';
 import { templatesApi } from '../features/templates/templatesApi';
-import { preferencesApi } from '../features/preferences/preferencesApi';
-import onboardingReducer from './onboardingSlice';
+import { goalsApi } from '../features/goals/goalsApi';
+import { userPreferenceApi } from '../features/userPreference/userPreferenceApi';
 
 export const store = configureStore({
   reducer: {
@@ -11,19 +11,15 @@ export const store = configureStore({
     [authApi.reducerPath]: authApi.reducer,
     [workoutsApi.reducerPath]: workoutsApi.reducer,
     [templatesApi.reducerPath]: templatesApi.reducer,
-    [preferencesApi.reducerPath]: preferencesApi.reducer,
+    [goalsApi.reducerPath]: goalsApi.reducer,
+    [userPreferenceApi.reducerPath]: userPreferenceApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
       },
-    }).concat(
-      authApi.middleware,
-      workoutsApi.middleware,
-      templatesApi.middleware,
-      preferencesApi.middleware,
-    ),
+    }).concat(authApi.middleware, workoutsApi.middleware, templatesApi.middleware, goalsApi.middleware, userPreferenceApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
