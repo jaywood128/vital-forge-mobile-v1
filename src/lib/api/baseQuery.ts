@@ -11,6 +11,7 @@ import * as SecureStore from 'expo-secure-store';
 // so we do not send/fetch CSRF tokens here.
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
+  timeout: 10000,
 });
 
 export const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (

@@ -28,6 +28,9 @@ export default function RootLayout() {
           <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
           <Stack.Screen name="home" options={{ title: 'Vital Forge' }} />
           <Stack.Screen name="goal-selection" options={{ headerShown: false }} />
+          <Stack.Screen name="training-days" options={{ headerShown: false }} />
+          <Stack.Screen name="experience-level" options={{ headerShown: false }} />
+          <Stack.Screen name="template-preview" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
