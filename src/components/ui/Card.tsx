@@ -1,9 +1,9 @@
-import { View, ViewStyle } from 'react-native';
+import { View, StyleProp, ViewStyle } from 'react-native';
 import { colors, radius, shadows, spacing } from '../../theme';
 
 type CardProps = {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function Card({ children, style }: CardProps) {

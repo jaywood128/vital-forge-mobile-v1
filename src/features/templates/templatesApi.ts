@@ -9,29 +9,41 @@ export type WorkoutTemplate = {
   goal_type: PrimaryGoal;
   difficulty_level: ExperienceLevel;
   days_per_week: number;
-  estimated_duration_minutes: number;
-  total_exercises: number;
+  estimated_duration_minutes: number | null;
+  total_exercises: number | null;
   source: string;
+  has_active_workout: boolean;
+  active_workout_id: number | null;
 };
 
 export type TemplateExercise = {
   id: number;
+  exercise_id: number;
   order_position: number;
   recommended_sets: number;
   recommended_reps: string;
-  rest_seconds: number;
+  rest_seconds: number | null;
   notes: string | null;
   exercise: {
     id: number;
     name: string;
-    muscle_group: string;
+    muscle_group: string | null;
     equipment: string;
-    difficulty_level: string;
+    difficulty_level: string | null;
   };
 };
 
-export type WorkoutTemplateDetail = WorkoutTemplate & {
+export type WorkoutTemplateDay = {
+  id: number;
+  day_number: number;
+  name: string;
+  estimated_duration_minutes: number | null;
+  muscle_focus: string | null;
   exercises: TemplateExercise[];
+};
+
+export type WorkoutTemplateDetail = WorkoutTemplate & {
+  days: WorkoutTemplateDay[];
 };
 
 type TemplatesResponse = { data: WorkoutTemplate[] };

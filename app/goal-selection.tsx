@@ -39,7 +39,7 @@ export default function GoalSelectionScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>What's your goal?</Text>
+        <Text style={styles.title}>{"What's your goal?"}</Text>
         <Text style={styles.subtitle}>This shapes the programmes we recommend for you.</Text>
 
         {GOALS.map((goal) => (
