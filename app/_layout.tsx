@@ -31,6 +31,7 @@ export default function RootLayout() {
           <Stack.Screen name="training-days" options={{ headerShown: false }} />
           <Stack.Screen name="experience-level" options={{ headerShown: false }} />
           <Stack.Screen name="template-preview" options={{ headerShown: false }} />
+          <Stack.Screen name="workout-preview" options={{ title: "Today's Workout", headerShown: true }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

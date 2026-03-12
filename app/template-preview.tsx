@@ -24,7 +24,7 @@ function ExpandableTemplateCard({
   const [expanded, setExpanded] = useState(false);
   const { data: detail, isFetching } = useGetTemplateQuery(template.id, { skip: !expanded });
 
-  const exercises: TemplateExercise[] = detail?.exercises ?? [];
+  const exercises: TemplateExercise[] = detail?.days?.flatMap((d) => d.exercises) ?? [];
 
   return (
     <View style={[styles.card, selected && styles.cardSelected]}>

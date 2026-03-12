@@ -62,7 +62,7 @@ export default function LoginScreen() {
 
         <Pressable onPress={() => router.push('/signup')} style={styles.linkTouch}>
           <Text style={styles.signupText}>
-            Don't have an account? <Text style={styles.link}>Sign up</Text>
+            {"Don't have an account?"} <Text style={styles.link}>Sign up</Text>
           </Text>
         </Pressable>
       </Card>
