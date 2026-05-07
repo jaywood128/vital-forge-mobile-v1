@@ -1,5 +1,5 @@
 import { Text, Pressable, StyleSheet, ScrollView, View, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
@@ -112,6 +112,7 @@ export default function TemplatePreviewScreen() {
   const { data: allTemplates, isLoading, isError } = useGetTemplatesQuery();
   const [updatePreference] = useUpdatePreferenceMutation();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const insets = useSafeAreaInsets();
 
   const matched = allTemplates?.filter((t) => t.goal_type === goal) ?? [];
 
@@ -134,7 +135,7 @@ export default function TemplatePreviewScreen() {
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
       </SafeAreaView>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + spacing.xl }]}>
         <Text style={styles.title}>Your programmes</Text>
         <Text style={styles.subtitle}>
           Based on your goal ({GOAL_LABEL[goal] ?? goal}), {days} days/week, {level} level.
@@ -190,11 +191,13 @@ const styles = StyleSheet.create({
     ...typography.bodyLight,
     fontWeight: '600',
   },
+  scroll: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     padding: spacing.md,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
   },
   title: {
     ...typography.titleLight,

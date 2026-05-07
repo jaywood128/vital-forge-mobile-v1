@@ -1,6 +1,7 @@
 import { Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type PrimaryGoal } from '../src/features/userPreference/userPreferenceApi';
 import { colors, spacing, typography, radius } from '../src/theme';
 
@@ -25,6 +26,7 @@ const GOALS: GoalOption[] = [
 
 export default function GoalSelectionScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleSelectGoal = (goal: PrimaryGoal) => {
     router.push({ pathname: '/training-days', params: { goal } });
@@ -36,7 +38,7 @@ export default function GoalSelectionScreen() {
       style={styles.gradient}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.lg }]}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{"What's your goal?"}</Text>
@@ -66,7 +68,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: spacing.md,
-    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
   title: {

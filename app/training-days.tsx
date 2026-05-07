@@ -67,7 +67,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.md,
     paddingTop: spacing.xl,
-    justifyContent: 'center',
   },
   title: {
     ...typography.titleLight,
