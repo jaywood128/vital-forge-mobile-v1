@@ -43,7 +43,7 @@ export const authApi = createApi({
     }),
     signup: builder.mutation<
       MobileAuthResponse['data'],
-      { email: string; password: string; first_name: string; last_name: string; password_confirmation?: string }
+      { email: string; password: string; first_name: string; last_name: string; phone_number: string; password_confirmation?: string }
     >({
       query: (userData) => ({
         url: '/api/v1/mobile/signup',

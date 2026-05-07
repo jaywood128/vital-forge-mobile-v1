@@ -1,17 +1,35 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../../lib/api/baseQuery';
 
+export type WorkoutExercise = {
+  id: number;
+  exercise_id: number;
+  order_position: number;
+  completed: boolean;
+  notes: string | null;
+};
+
+export type Workout = {
+  id: number;
+  name: string;
+  completed: boolean;
+  started_at: string | null;
+  workout_date: string;
+  workout_template_id: number | null;
+  workout_exercises: WorkoutExercise[];
+};
+
 export const workoutsApi = createApi({
   reducerPath: 'workoutsApi',
   baseQuery,
   tagTypes: ['Workouts', 'ActiveWorkout'],
   endpoints: (builder) => ({
-    // Start workout from template
-    startWorkout: builder.mutation<any, { workout_template_id: number }>({
-      query: (body) => ({
-        url: '/api/v1/workouts',
+    // Start workout from template for a specific day
+    startWorkout: builder.mutation<{ workout: Workout }, { templateId: number; day_number: number }>({
+      query: ({ templateId, day_number }) => ({
+        url: `/api/v1/workout_templates/${templateId}/start`,
         method: 'POST',
-        body,
+        body: { day_number },
       }),
       invalidatesTags: ['Workouts', 'ActiveWorkout'],
     }),
@@ -30,14 +48,15 @@ export const workoutsApi = createApi({
     // Complete workout
     completeWorkout: builder.mutation<any, number>({
       query: (workoutId) => ({
-        url: `/api/v1/workouts/${workoutId}/finish`,
-        method: 'POST',
+        url: `/api/v1/workouts/${workoutId}/complete`,
+        method: 'PATCH',
       }),
       invalidatesTags: ['Workouts', 'ActiveWorkout'],
     }),
     // Get workout history
-    getWorkouts: builder.query<any[], void>({
+    getWorkouts: builder.query<Workout[], void>({
       query: () => '/api/v1/workouts',
+      transformResponse: (response: { data: Workout[] }) => response.data,
       providesTags: ['Workouts'],
     }),
   }),
