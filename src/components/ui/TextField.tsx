@@ -1,13 +1,15 @@
 import { TextInput, TextInputProps, StyleSheet } from 'react-native';
 import { useState } from 'react';
+import React from 'react';
 import { colors, radius, spacing } from '../../theme';
 
-type TextFieldProps = TextInputProps;
+type TextFieldProps = TextInputProps & { ref?: React.Ref<TextInput> };
 
-export function TextField(props: TextFieldProps) {
+export function TextField({ ref, ...props }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   return (
     <TextInput
+      ref={ref}
       {...props}
       style={[styles.input, focused && styles.inputFocused, props.style]}
       placeholderTextColor={colors.mediumGray}
