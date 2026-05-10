@@ -61,6 +61,19 @@ const baseWorkout = {
   ],
 };
 
+const bodyweightWorkout = {
+  ...baseWorkout,
+  workout_exercises: [
+    {
+      ...baseWorkout.workout_exercises[0],
+      exercise: {
+        ...baseWorkout.workout_exercises[0].exercise,
+        equipment: 'Bodyweight',
+      },
+    },
+  ],
+};
+
 const makeAllSetsCompleted = () => ({
   ...baseWorkout,
   workout_exercises: baseWorkout.workout_exercises.map((we) => ({
@@ -234,6 +247,36 @@ describe('ActiveWorkoutScreen', () => {
     });
     expect(alertSpy).toHaveBeenCalledWith('Could not finish workout', expect.any(String), expect.any(Array));
     expect(mockReplace).not.toHaveBeenCalledWith('/home');
+  });
+
+  it('bodyweight set: Log button calls logSet with weight null when weight left blank', async () => {
+    mockUseGetWorkoutQuery.mockReturnValue({
+      data: bodyweightWorkout,
+      isLoading: false,
+      isError: false,
+      refetch: jest.fn(),
+    });
+    const { getByText } = render(<ActiveWorkoutScreen />);
+    await act(async () => {
+      fireEvent.press(getByText('Log'));
+    });
+    expect(mockLogSetFn).toHaveBeenCalledWith({ id: 1, weight: null, reps: 10, completed: true });
+  });
+
+  it('bodyweight set logged with no extra weight shows reps only', async () => {
+    mockUseGetWorkoutQuery.mockReturnValue({
+      data: bodyweightWorkout,
+      isLoading: false,
+      isError: false,
+      refetch: jest.fn(),
+    });
+    const { getByText, queryByText } = render(<ActiveWorkoutScreen />);
+    await act(async () => {
+      fireEvent.press(getByText('Log'));
+    });
+    expect(getByText('10 reps')).toBeTruthy();
+    expect(getByText('✓')).toBeTruthy();
+    expect(queryByText(/lbs/)).toBeNull();
   });
 
   it('resume path shows previously logged sets in green logged state', () => {

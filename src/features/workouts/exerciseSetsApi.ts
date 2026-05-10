@@ -4,7 +4,7 @@ import type { ExerciseSet } from './workoutsApi';
 
 export type LogSetPayload = {
   id: number;
-  weight: number;
+  weight: number | null;
   reps: number;
   completed: true;
 };

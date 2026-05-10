@@ -25,7 +25,7 @@ type SetInputState = { weight: string; reps: string };
 type InputMap = Record<number, SetInputState>;
 
 // Sets confirmed logged this session (weight/reps stored for display)
-type LoggedSetData = { weight: number; reps: number };
+type LoggedSetData = { weight: number | null; reps: number };
 type LoggedMap = Record<number, LoggedSetData>;
 
 // Per-set error messages
@@ -38,6 +38,7 @@ type SetRowProps = {
   loggedData: LoggedSetData | undefined;
   isLoading: boolean;
   error: string | undefined;
+  isBodyweight: boolean;
   onInputChange: (field: 'weight' | 'reps', value: string) => void;
   onLog: () => void;
   onReEdit: () => void;
@@ -50,11 +51,14 @@ function SetRow({
   loggedData,
   isLoading,
   error,
+  isBodyweight,
   onInputChange,
   onLog,
   onReEdit,
 }: SetRowProps) {
-  const canLog = input.weight.trim().length > 0 && input.reps.trim().length > 0;
+  const canLog = isBodyweight
+    ? input.reps.trim().length > 0
+    : input.weight.trim().length > 0 && input.reps.trim().length > 0;
 
   if (isLogged && loggedData) {
     return (
@@ -66,7 +70,11 @@ function SetRow({
       >
         <Text style={styles.setNumber}>Set {set.set_number}</Text>
         <Text style={styles.loggedValues}>
-          {loggedData.weight} lbs × {loggedData.reps} reps
+          {isBodyweight
+            ? loggedData.weight
+              ? `+${loggedData.weight} lbs × ${loggedData.reps} reps`
+              : `${loggedData.reps} reps`
+            : `${loggedData.weight} lbs × ${loggedData.reps} reps`}
         </Text>
         <Text style={styles.loggedBadge}>✓</Text>
       </TouchableOpacity>
@@ -80,15 +88,21 @@ function SetRow({
       <View style={styles.inputs}>
         <View style={styles.inputGroup}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isBodyweight && styles.inputOptional]}
             value={input.weight}
             onChangeText={(v) => onInputChange('weight', v)}
-            placeholder="0"
+            placeholder={isBodyweight ? 'optional' : '0'}
             keyboardType="numeric"
             editable={!isLoading}
-            accessibilityLabel={`Weight for set ${set.set_number}`}
+            accessibilityLabel={
+              isBodyweight
+                ? `Extra weight for set ${set.set_number}`
+                : `Weight for set ${set.set_number}`
+            }
           />
-          <Text style={styles.inputUnit}>lbs</Text>
+          <Text style={[styles.inputUnit, isBodyweight && styles.inputUnitOptional]}>
+            {isBodyweight ? '+lbs' : 'lbs'}
+          </Text>
         </View>
 
         <View style={styles.inputGroup}>
@@ -141,6 +155,8 @@ function ExerciseSection({
   onLog,
   onReEdit,
 }: ExerciseSectionProps) {
+  const isBodyweight = exercise.exercise.equipment === 'Bodyweight';
+
   return (
     <Card style={styles.exerciseCard}>
       <Text style={styles.exerciseName}>{exercise.exercise.name}</Text>
@@ -169,6 +185,7 @@ function ExerciseSection({
             loggedData={loggedData}
             isLoading={loadingSetId === set.id}
             error={errorMap[set.id]}
+            isBodyweight={isBodyweight}
             onInputChange={(field, value) => onInputChange(set.id, field, value)}
             onLog={() => {
               const inp = inputMap[set.id] ?? { weight: '', reps: String(set.reps ?? '') };
@@ -237,7 +254,7 @@ export default function ActiveWorkoutScreen() {
 
     const promise = logSet({
       id: set.id,
-      weight: Number(weight),
+      weight: weight.trim() ? Number(weight) : null,
       reps: Number(reps),
       completed: true,
     });
@@ -250,7 +267,7 @@ export default function ActiveWorkoutScreen() {
       clearTimeout(timeoutId);
       setLoggedMap((prev) => ({
         ...prev,
-        [set.id]: { weight: Number(weight), reps: Number(reps) },
+        [set.id]: { weight: weight.trim() ? Number(weight) : null, reps: Number(reps) },
       }));
     } catch (err: any) {
       clearTimeout(timeoutId);
@@ -483,6 +500,14 @@ const styles = StyleSheet.create({
   },
   logButtonDisabled: {
     backgroundColor: colors.mediumGray,
+  },
+  inputOptional: {
+    borderStyle: 'dashed',
+    borderColor: colors.mediumGray,
+    opacity: 0.6,
+  },
+  inputUnitOptional: {
+    opacity: 0.5,
   },
   logButtonText: {
     ...typography.button,
