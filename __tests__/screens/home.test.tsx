@@ -127,5 +127,19 @@ describe('HomeScreen', () => {
   });
 
   it.todo('navigates to /workout-preview with correct dayNumber on card press');
-  it.todo('Resume button navigates with active_workout_id');
+
+  it('Resume button navigates to /active-workout with the in-progress workout id', () => {
+    mockUseGetTemplateQuery.mockReturnValue({
+      data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
+    });
+    mockUseGetWorkoutsQuery.mockReturnValue({
+      data: [{ id: 99, completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
+    });
+    const { getByText } = render(<HomeScreen />);
+    fireEvent.press(getByText('Resume Workout'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/active-workout',
+      params: { workoutId: '99' },
+    });
+  });
 });

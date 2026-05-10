@@ -43,12 +43,14 @@ export default function WorkoutPreviewScreen() {
   const handleStartWorkout = async () => {
     if (!templateId || !dayNumber) return;
     try {
-      await startWorkout({
+      const result = await startWorkout({
         templateId: Number(templateId),
         day_number: Number(dayNumber),
       }).unwrap();
-      // Feature 005 placeholder — navigate home until active workout screen exists
-      router.replace('/home');
+      router.replace({
+        pathname: '/active-workout',
+        params: { workoutId: String(result.workout.id), dayName: dayName ?? '' },
+      });
     } catch (err: any) {
       if (err?.status === 409) {
         Alert.alert(
@@ -57,7 +59,11 @@ export default function WorkoutPreviewScreen() {
           [
             {
               text: 'Resume',
-              onPress: () => router.replace('/home'),
+              onPress: () =>
+                router.replace({
+                  pathname: '/active-workout',
+                  params: { workoutId: String(err.data?.active_workout_id) },
+                }),
             },
             { text: 'Cancel', style: 'cancel' },
           ]
