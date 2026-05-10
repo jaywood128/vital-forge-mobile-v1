@@ -319,6 +319,7 @@ export default function ActiveWorkoutScreen() {
       <FlatList
         data={workout.workout_exercises}
         keyExtractor={(item) => item.id.toString()}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <Card style={styles.headerCard}>
             <Text style={styles.workoutName}>{workout.name}</Text>
@@ -421,11 +422,13 @@ const styles = StyleSheet.create({
   setRowLogged: {
     backgroundColor: colors.lightGreen,
     borderRadius: radius.sm,
+    borderTopWidth: 0,
     paddingHorizontal: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: spacing.touchMin,
+    marginBottom: spacing.sm,
   },
   setNumber: {
     ...typography.caption,
