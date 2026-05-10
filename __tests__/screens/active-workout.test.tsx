@@ -292,4 +292,35 @@ describe('ActiveWorkoutScreen', () => {
     expect(getByText('95 lbs × 8 reps')).toBeTruthy();
     expect(getByText('✓')).toBeTruthy();
   });
+
+  it('tapping a resumed API-logged set re-enters edit mode', async () => {
+    const resumeWorkout = {
+      ...baseWorkout,
+      workout_exercises: baseWorkout.workout_exercises.map((we) => ({
+        ...we,
+        exercise_sets: we.exercise_sets.map((s) => ({ ...s, completed: true, weight: 95, reps: 8 })),
+      })),
+    };
+    mockUseGetWorkoutQuery.mockReturnValue({ data: resumeWorkout, isLoading: false, isError: false, refetch: jest.fn() });
+    const { getByText, getByLabelText } = render(<ActiveWorkoutScreen />);
+    expect(getByText('95 lbs × 8 reps')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByLabelText('Set 1 logged. Tap to edit.'));
+    });
+    expect(getByText('Log')).toBeTruthy();
+  });
+
+  it('resumed bodyweight set (weight null) shows as locked', () => {
+    const resumeBodyweightWorkout = {
+      ...bodyweightWorkout,
+      workout_exercises: bodyweightWorkout.workout_exercises.map((we) => ({
+        ...we,
+        exercise_sets: we.exercise_sets.map((s) => ({ ...s, completed: true, weight: null, reps: 12 })),
+      })),
+    };
+    mockUseGetWorkoutQuery.mockReturnValue({ data: resumeBodyweightWorkout, isLoading: false, isError: false, refetch: jest.fn() });
+    const { getByText } = render(<ActiveWorkoutScreen />);
+    expect(getByText('12 reps')).toBeTruthy();
+    expect(getByText('✓')).toBeTruthy();
+  });
 });

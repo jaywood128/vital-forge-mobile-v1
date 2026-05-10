@@ -140,6 +140,7 @@ type ExerciseSectionProps = {
   loggedMap: LoggedMap;
   errorMap: ErrorMap;
   loadingSetId: number | null;
+  reEditedIds: ReadonlySet<number>;
   onInputChange: (setId: number, field: 'weight' | 'reps', value: string) => void;
   onLog: (set: ExerciseSet, weight: string, reps: string) => void;
   onReEdit: (setId: number) => void;
@@ -151,6 +152,7 @@ function ExerciseSection({
   loggedMap,
   errorMap,
   loadingSetId,
+  reEditedIds,
   onInputChange,
   onLog,
   onReEdit,
@@ -167,13 +169,13 @@ function ExerciseSection({
       ) : null}
 
       {exercise.exercise_sets.map((set) => {
-        const isLoggedFromApi = set.completed && set.weight != null && set.reps != null;
+        const isLoggedFromApi = set.completed && set.reps != null;
         const isLoggedLocally = !!loggedMap[set.id];
-        const isLogged = isLoggedLocally || isLoggedFromApi;
+        const isLogged = (isLoggedLocally || isLoggedFromApi) && !reEditedIds.has(set.id);
         const loggedData: LoggedSetData | undefined = isLoggedLocally
           ? loggedMap[set.id]
           : isLoggedFromApi
-            ? { weight: set.weight!, reps: set.reps! }
+            ? { weight: set.weight, reps: set.reps! }
             : undefined;
 
         return (
@@ -218,6 +220,8 @@ export default function ActiveWorkoutScreen() {
   const [loggedMap, setLoggedMap] = useState<LoggedMap>({});
   const [errorMap, setErrorMap] = useState<ErrorMap>({});
   const [loadingSetId, setLoadingSetId] = useState<number | null>(null);
+  // Tracks sets the user has chosen to re-edit so API-logged sets (set.completed=true) can exit locked state
+  const [reEditedIds, setReEditedIds] = useState<ReadonlySet<number>>(new Set());
 
   // Seed inputMap with template reps once workout data arrives (weight stays empty per FR-003)
   useEffect(() => {
@@ -269,6 +273,7 @@ export default function ActiveWorkoutScreen() {
         ...prev,
         [set.id]: { weight: weight.trim() ? Number(weight) : null, reps: Number(reps) },
       }));
+      setReEditedIds((prev) => { const next = new Set(prev); next.delete(set.id); return next; });
     } catch (err: any) {
       clearTimeout(timeoutId);
       setErrorMap((prev) => ({
@@ -286,6 +291,7 @@ export default function ActiveWorkoutScreen() {
       delete next[setId];
       return next;
     });
+    setReEditedIds((prev) => { const next = new Set(prev); next.add(setId); return next; });
     setErrorMap((prev) => ({ ...prev, [setId]: '' }));
   };
 
@@ -350,6 +356,7 @@ export default function ActiveWorkoutScreen() {
             loggedMap={loggedMap}
             errorMap={errorMap}
             loadingSetId={loadingSetId}
+            reEditedIds={reEditedIds}
             onInputChange={handleInputChange}
             onLog={handleLog}
             onReEdit={handleReEdit}
