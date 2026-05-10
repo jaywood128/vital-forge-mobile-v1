@@ -11,6 +11,10 @@ jest.mock('expo-linear-gradient', () => {
   return { LinearGradient: ({ children, ...props }: any) => <View {...props}>{children}</View> };
 });
 
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
 import GoalSelectionScreen from '../../app/goal-selection';
 
 describe('GoalSelectionScreen', () => {

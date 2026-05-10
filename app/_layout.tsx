@@ -32,6 +32,7 @@ export default function RootLayout() {
           <Stack.Screen name="experience-level" options={{ headerShown: false }} />
           <Stack.Screen name="template-preview" options={{ headerShown: false }} />
           <Stack.Screen name="workout-preview" options={{ title: "Today's Workout", headerShown: true }} />
+          <Stack.Screen name="active-workout" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
