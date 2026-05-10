@@ -6,6 +6,7 @@ const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
   useLocalSearchParams: () => ({ workoutId: '42', dayName: 'Pull Day' }),
+  useFocusEffect: jest.fn(),
 }));
 
 const mockUseGetWorkoutQuery = jest.fn();

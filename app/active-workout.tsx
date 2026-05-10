@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Text,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useGetWorkoutQuery,
   useCompleteWorkoutMutation,
@@ -209,9 +209,13 @@ export default function ActiveWorkoutScreen() {
   const router = useRouter();
   const workoutIdNum = Number(workoutId);
 
-  const { data: workout, isLoading, isError, refetch } = useGetWorkoutQuery(workoutIdNum, {
+  const { data: workout, isLoading, isFetching, isError, refetch } = useGetWorkoutQuery(workoutIdNum, {
     skip: !workoutId,
   });
+
+  // Force-refetch on focus so stale cached data (completed: false) never blocks the redirect
+  useFocusEffect(useCallback(() => { if (workoutId) refetch(); }, [workoutId, refetch]));
+
   const [completeWorkout, { isLoading: isCompleting }] = useCompleteWorkoutMutation();
   const [logSet] = useLogSetMutation();
 
@@ -305,7 +309,12 @@ export default function ActiveWorkoutScreen() {
       try {
         await completeWorkout(workoutIdNum).unwrap();
         router.replace('/home');
-      } catch {
+      } catch (err: any) {
+        // 422 = already completed (Workout::InvalidTransition). Treat as success.
+        if (err?.status === 422) {
+          router.replace('/home');
+          return;
+        }
         Alert.alert('Could not finish workout', 'Please try again.', [{ text: 'OK' }]);
       }
     };
@@ -320,7 +329,7 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isFetching || workout?.completed) {
     return (
       <Screen>
         <ActivityIndicator size="large" color={colors.electricBlue} style={styles.loader} />
@@ -345,8 +354,20 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <Card style={styles.headerCard}>
-            <Text style={styles.workoutName}>{workout.name}</Text>
-            {dayName ? <Text style={styles.dayLabel}>{dayName}</Text> : null}
+            <View style={styles.headerRow}>
+              <View style={styles.headerText}>
+                <Text style={styles.workoutName}>{workout.name}</Text>
+                {dayName ? <Text style={styles.dayLabel}>{dayName}</Text> : null}
+              </View>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Exit workout"
+              >
+                <Text style={styles.closeButtonText}>←</Text>
+              </TouchableOpacity>
+            </View>
           </Card>
         }
         renderItem={({ item }) => (
@@ -400,6 +421,14 @@ const styles = StyleSheet.create({
   headerCard: {
     margin: spacing.md,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  headerText: {
+    flex: 1,
+  },
   workoutName: {
     fontSize: 20,
     fontWeight: '700',
@@ -412,6 +441,16 @@ const styles = StyleSheet.create({
     color: colors.electricBlue,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  closeButton: {
+    minHeight: spacing.touchMin,
+    minWidth: spacing.touchMin,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: colors.mediumGray,
   },
   listContent: {
     paddingBottom: spacing.xxl,

@@ -1,10 +1,14 @@
+import { useCallback } from 'react';
 import { Text, StyleSheet, Alert, View, Pressable } from 'react-native';
-import { useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
-import { useGetPreferenceQuery } from '../src/features/userPreference/userPreferenceApi';
-import { useGetTemplateQuery } from '../src/features/templates/templatesApi';
-import { useGetWorkoutsQuery } from '../src/features/workouts/workoutsApi';
+import { useDispatch } from 'react-redux';
+import { authApi, useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
+import { userPreferenceApi, useGetPreferenceQuery } from '../src/features/userPreference/userPreferenceApi';
+import { templatesApi, useGetTemplateQuery } from '../src/features/templates/templatesApi';
+import { workoutsApi, useGetWorkoutsQuery } from '../src/features/workouts/workoutsApi';
+import { exerciseSetsApi } from '../src/features/workouts/exerciseSetsApi';
+import { goalsApi } from '../src/features/goals/goalsApi';
 import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { colors, spacing, typography, radius } from '../src/theme';
 import { Screen, Card, Button } from '../src/components/ui';
 
@@ -14,17 +18,25 @@ const GOAL_LABEL: Record<string, string> = {
 };
 
 export default function HomeScreen() {
+  const dispatch = useDispatch();
   const { data: user, isLoading } = useGetCurrentUserQuery();
   const { data: preference } = useGetPreferenceQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const router = useRouter();
 
   const templateId = preference?.selected_workout_template_id ?? 0;
-  const { data: template } = useGetTemplateQuery(templateId, {
+  const { data: template, refetch: refetchTemplate } = useGetTemplateQuery(templateId, {
     skip: !preference?.selected_workout_template_id,
   });
-  const { data: workouts } = useGetWorkoutsQuery();
-  console.log(`Workouts: ${workouts}`)
+
+  const { data: workouts, refetch: refetchWorkouts } = useGetWorkoutsQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchWorkouts();
+      if (preference?.selected_workout_template_id) refetchTemplate();
+    }, [preference?.selected_workout_template_id, refetchTemplate, refetchWorkouts])
+  );
   const completedCount =
     workouts?.filter(
       (w) => w.completed && w.workout_template_id === templateId
@@ -35,8 +47,8 @@ export default function HomeScreen() {
   const nextDayData = template?.days?.find((d) => d.day_number === nextDay);
   const nextDayName = nextDayData?.name ?? `Day ${nextDay}`;
 
-  const hasActiveWorkout = template?.has_active_workout ?? false;
   const activeWorkout = workouts?.find((w) => !w.completed);
+  const hasActiveWorkout = !!activeWorkout;
 
   const handleLogout = async () => {
     try {
@@ -45,6 +57,13 @@ export default function HomeScreen() {
     try {
       await SecureStore.deleteItemAsync('authToken');
     } catch {}
+    // Clear all RTK Query caches so a subsequent login doesn't see stale data from this user
+    dispatch(authApi.util.resetApiState());
+    dispatch(workoutsApi.util.resetApiState());
+    dispatch(exerciseSetsApi.util.resetApiState());
+    dispatch(templatesApi.util.resetApiState());
+    dispatch(goalsApi.util.resetApiState());
+    dispatch(userPreferenceApi.util.resetApiState());
     Alert.alert('Logged out', 'You have been logged out.');
     router.replace('/login');
   };
@@ -75,10 +94,22 @@ export default function HomeScreen() {
 
   const activeProgrammeCard = preference?.selected_workout_template_name ? (
     <>
-      {hasActiveWorkout ? (
+      <Pressable
+        onPress={hasActiveWorkout ? handleResumePress : handleCardPress}
+        accessibilityRole="button"
+        accessibilityLabel={hasActiveWorkout ? 'Resume in-progress workout' : `Start workout: ${nextDayName}`}
+        style={({ pressed }) => [pressed && styles.cardPressed]}
+      >
         <Card style={[styles.card, styles.programmeCard]}>
           <Text style={styles.programmeLabel}>Active Programme</Text>
           <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
+          {hasActiveWorkout ? (
+            <Text style={styles.resumeLabel}>In Progress — Tap to Resume</Text>
+          ) : (
+            <Text style={styles.nextUpLabel}>
+              Next Up: Day {nextDay} — {nextDayName}
+            </Text>
+          )}
           <View style={styles.programmeMeta}>
             {preference.primary_goal && (
               <View style={styles.programmeChip}>
@@ -97,48 +128,7 @@ export default function HomeScreen() {
             )}
           </View>
         </Card>
-      ) : (
-        <Pressable
-          onPress={handleCardPress}
-          accessibilityRole="button"
-          accessibilityLabel={`Start workout: ${nextDayName}`}
-          style={({ pressed }) => [pressed && styles.cardPressed]}
-        >
-          <Card style={[styles.card, styles.programmeCard]}>
-            <Text style={styles.programmeLabel}>Active Programme</Text>
-            <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
-            <Text style={styles.nextUpLabel}>
-              Next Up: Day {nextDay} — {nextDayName}
-            </Text>
-            <View style={styles.programmeMeta}>
-              {preference.primary_goal && (
-                <View style={styles.programmeChip}>
-                  <Text style={styles.programmeChipText}>{GOAL_LABEL[preference.primary_goal] ?? preference.primary_goal}</Text>
-                </View>
-              )}
-              {preference.training_days_per_week && (
-                <View style={styles.programmeChip}>
-                  <Text style={styles.programmeChipText}>{preference.training_days_per_week} days/week</Text>
-                </View>
-              )}
-              {preference.experience_level && (
-                <View style={styles.programmeChip}>
-                  <Text style={styles.programmeChipText}>{preference.experience_level}</Text>
-                </View>
-              )}
-            </View>
-          </Card>
-        </Pressable>
-      )}
-
-      {hasActiveWorkout && (
-        <Button
-          title="Resume Workout"
-          onPress={handleResumePress}
-          variant="primary"
-          style={styles.resumeButton}
-        />
-      )}
+      </Pressable>
     </>
   ) : preference ? (
     <Card style={styles.card}>
@@ -215,9 +205,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
   },
-  resumeButton: {
-    marginBottom: spacing.lg,
-  },
   programmeCard: {
     borderColor: colors.electricBlue,
     borderWidth: 2,
@@ -239,6 +226,12 @@ const styles = StyleSheet.create({
   nextUpLabel: {
     ...typography.caption,
     color: colors.electricBlue,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  resumeLabel: {
+    ...typography.caption,
+    color: colors.energeticOrange,
     fontWeight: '600',
     marginBottom: spacing.md,
   },

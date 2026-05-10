@@ -5,11 +5,14 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
+
+const mockDispatch = jest.fn();
 
 const mockUseGetCurrentUserQuery = jest.fn();
 jest.mock('../../src/features/auth/authApi', () => ({
@@ -62,6 +65,7 @@ const baseTemplate = {
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(require('react-redux'), 'useDispatch').mockReturnValue(mockDispatch);
     mockUseGetCurrentUserQuery.mockReturnValue({ data: baseUser, isLoading: false });
     mockUseGetPreferenceQuery.mockReturnValue({ data: basePreference });
     mockUseGetTemplateQuery.mockReturnValue({ data: baseTemplate });
@@ -102,20 +106,26 @@ describe('HomeScreen', () => {
     expect(card).toBeTruthy();
   });
 
-  it('shows Resume Workout button when active workout exists', () => {
+  it('shows "In Progress" label when active workout exists', () => {
     mockUseGetTemplateQuery.mockReturnValue({
       data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
+    });
+    mockUseGetWorkoutsQuery.mockReturnValue({
+      data: [{ id: 99, completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
     });
     const { getByText } = render(<HomeScreen />);
-    expect(getByText('Resume Workout')).toBeTruthy();
+    expect(getByText('In Progress — Tap to Resume')).toBeTruthy();
   });
 
-  it('Active Programme card is not pressable when active workout exists', () => {
+  it('Active Programme card is tappable with resume label when active workout exists', () => {
     mockUseGetTemplateQuery.mockReturnValue({
       data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
     });
-    const { queryByRole } = render(<HomeScreen />);
-    expect(queryByRole('button', { name: /Start workout/ })).toBeNull();
+    mockUseGetWorkoutsQuery.mockReturnValue({
+      data: [{ id: 99, completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
+    });
+    const { getByRole } = render(<HomeScreen />);
+    expect(getByRole('button', { name: /Resume in-progress workout/ })).toBeTruthy();
   });
 
   it('Active Programme card is not pressable when no programme selected', () => {
@@ -128,15 +138,15 @@ describe('HomeScreen', () => {
 
   it.todo('navigates to /workout-preview with correct dayNumber on card press');
 
-  it('Resume button navigates to /active-workout with the in-progress workout id', () => {
+  it('tapping the active workout card navigates to /active-workout with the in-progress workout id', () => {
     mockUseGetTemplateQuery.mockReturnValue({
       data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
     });
     mockUseGetWorkoutsQuery.mockReturnValue({
       data: [{ id: 99, completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
     });
-    const { getByText } = render(<HomeScreen />);
-    fireEvent.press(getByText('Resume Workout'));
+    const { getByRole } = render(<HomeScreen />);
+    fireEvent.press(getByRole('button', { name: /Resume in-progress workout/ }));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/active-workout',
       params: { workoutId: '99' },

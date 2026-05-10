@@ -78,12 +78,33 @@ export const workoutsApi = createApi({
       transformResponse: (response: { data: WorkoutDetail }) => response.data,
       providesTags: (_result, _err, id) => [{ type: 'ActiveWorkout', id }],
     }),
-    // completeWorkout already existed and is correct — not duplicated
     completeWorkout: builder.mutation<{ workout: Workout }, number>({
       query: (workoutId) => ({
         url: `/api/v1/workouts/${workoutId}/complete`,
         method: 'PATCH',
       }),
+      async onQueryStarted(workoutId, { dispatch, queryFulfilled }) {
+        // Optimistically mark completed in both caches so UI updates before the refetch resolves:
+        // - workouts list: home card flips to "Next Up" immediately
+        // - workout detail: redirect effect fires before the screen becomes interactive
+        const patchList = dispatch(
+          workoutsApi.util.updateQueryData('getWorkouts', undefined, (draft) => {
+            const w = draft.find((w) => w.id === workoutId);
+            if (w) w.completed = true;
+          })
+        );
+        const patchDetail = dispatch(
+          workoutsApi.util.updateQueryData('getWorkout', workoutId, (draft) => {
+            draft.completed = true;
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchList.undo();
+          patchDetail.undo();
+        }
+      },
       invalidatesTags: ['Workouts', 'ActiveWorkout'],
     }),
     getWorkouts: builder.query<Workout[], void>({
