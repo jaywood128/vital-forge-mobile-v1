@@ -246,7 +246,7 @@ export default function ActiveWorkoutScreen() {
     if (workout?.completed) {
       router.replace('/home');
     }
-  }, [workout?.completed]);
+  }, [workout?.completed, router]);
 
   const handleInputChange = (setId: number, field: 'weight' | 'reps', value: string) => {
     setInputMap((prev) => ({

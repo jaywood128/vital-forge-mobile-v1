@@ -48,7 +48,7 @@ export default function HomeScreen() {
   const nextDayName = nextDayData?.name ?? `Day ${nextDay}`;
 
   const activeWorkout = workouts?.find((w) => !w.completed);
-  const hasActiveWorkout = !!activeWorkout;
+  const hasActiveWorkout = template?.has_active_workout ?? !!activeWorkout;
 
   const handleLogout = async () => {
     try {
@@ -81,7 +81,13 @@ export default function HomeScreen() {
 
   const handleResumePress = () => {
     if (!activeWorkout) return;
-    router.push({ pathname: '/active-workout', params: { workoutId: String(activeWorkout.id) } });
+    router.push({
+      pathname: '/active-workout',
+      params: {
+        workoutId: String(activeWorkout.id),
+        dayName: activeWorkout.name ?? '',
+      },
+    });
   };
 
   if (isLoading) {

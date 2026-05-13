@@ -59,11 +59,14 @@ export default function WorkoutPreviewScreen() {
           [
             {
               text: 'Resume',
-              onPress: () =>
-                router.replace({
-                  pathname: '/active-workout',
-                  params: { workoutId: String(err.data?.active_workout_id) },
-                }),
+              onPress: () => {
+                if (err.data?.active_workout_id) {
+                  router.replace({
+                    pathname: '/active-workout',
+                    params: { workoutId: String(err.data.active_workout_id) },
+                  });
+                }
+              },
             },
             { text: 'Cancel', style: 'cancel' },
           ]
