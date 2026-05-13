@@ -143,13 +143,13 @@ describe('HomeScreen', () => {
       data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
     });
     mockUseGetWorkoutsQuery.mockReturnValue({
-      data: [{ id: 99, completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
+      data: [{ id: 99, name: 'Pull Day', completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
     });
     const { getByRole } = render(<HomeScreen />);
     fireEvent.press(getByRole('button', { name: /Resume in-progress workout/ }));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/active-workout',
-      params: { workoutId: '99' },
+      params: { workoutId: '99', dayName: 'Pull Day' },
     });
   });
 });
