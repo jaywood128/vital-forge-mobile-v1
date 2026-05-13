@@ -5,19 +5,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Development
-npx expo start          # Start Expo dev server
+# Rails API (run from ../vital-forge-v1)
+# -b 0.0.0.0 required — makes the server reachable from a physical phone on the same Wi-Fi
+bin/rails server -b 0.0.0.0 -p 3000
+
+# Expo (run from this directory)
+npx expo start          # Scan QR code with Expo Go on phone
 npx expo start --ios    # Run on iOS simulator
 npx expo start --android # Run on Android emulator
 
 # Linting
 npm run lint            # Run ESLint (Expo flat config)
 
+# Tests
+npx jest --no-coverage  # Run all tests
+
 # Reset
 npm run reset-project   # Reset to boilerplate (destructive)
 ```
 
-There are no test commands configured. Expo's built-in tooling handles builds (EAS Build for production).
+Physical device setup: phone and Mac must be on the same Wi-Fi. `EXPO_PUBLIC_API_URL` in `.env` must match the Mac's local IP (`ipconfig getifaddr en0`). Current value: `http://192.168.1.159:3000`.
+
+There are no test commands configured in package.json. Expo's built-in tooling handles builds (EAS Build for production).
 
 ## Environment
 
