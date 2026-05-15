@@ -8,7 +8,9 @@ import {
   Alert,
   TextInput,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useGetWorkoutQuery,
@@ -125,7 +127,14 @@ function SetRow({
           accessibilityRole="button"
           accessibilityLabel={isLoading ? 'Saving...' : 'Log set'}
         >
-          <Text style={styles.logButtonText}>{isLoading ? '...' : 'Log'}</Text>
+          <LinearGradient
+            colors={[colors.electricBlue, colors.electricBlueLight]}
+            style={styles.logButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.logButtonText}>{isLoading ? '…' : '+'}</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
 
@@ -331,15 +340,15 @@ export default function ActiveWorkoutScreen() {
 
   if (isLoading || isFetching || workout?.completed) {
     return (
-      <Screen>
-        <ActivityIndicator size="large" color={colors.electricBlue} style={styles.loader} />
+      <Screen variant="dark">
+        <ActivityIndicator size="large" color={colors.pureWhite} style={styles.loader} />
       </Screen>
     );
   }
 
   if (isError || !workout) {
     return (
-      <Screen>
+      <Screen variant="dark">
         <Text style={styles.errorText}>Failed to load workout. Please try again.</Text>
         <Button title="Retry" onPress={refetch} variant="secondary" style={styles.retryButton} />
       </Screen>
@@ -347,7 +356,12 @@ export default function ActiveWorkoutScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.navyDeep, colors.navyMid]}
+      style={styles.container}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+    >
       <FlatList
         data={workout.workout_exercises}
         keyExtractor={(item) => item.id.toString()}
@@ -386,7 +400,7 @@ export default function ActiveWorkoutScreen() {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Sticky footer — FR-008 */}
+      {/* Sticky footer */}
       <View style={styles.footer}>
         <Button
           title={isCompleting ? 'Finishing...' : 'Finish Workout'}
@@ -396,14 +410,13 @@ export default function ActiveWorkoutScreen() {
           style={styles.finishButton}
         />
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.warmGray,
   },
   loader: {
     marginTop: spacing.xxl,
@@ -411,7 +424,7 @@ const styles = StyleSheet.create({
   errorText: {
     ...typography.body,
     textAlign: 'center',
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.5)',
     marginTop: spacing.xxl,
     marginBottom: spacing.md,
   },
@@ -420,6 +433,11 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     margin: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
   headerRow: {
     flexDirection: 'row',
@@ -431,14 +449,14 @@ const styles = StyleSheet.create({
   },
   workoutName: {
     fontSize: 20,
-    fontWeight: '700',
-    color: colors.deepNavy,
+    fontWeight: '800',
+    color: colors.pureWhite,
     marginBottom: spacing.xs,
   },
   dayLabel: {
     ...typography.caption,
     fontWeight: '700',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -450,7 +468,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 16,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
   },
   listContent: {
     paddingBottom: spacing.xxl,
@@ -458,15 +476,21 @@ const styles = StyleSheet.create({
   exerciseCard: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.md,
+    backgroundColor: colors.navyCard,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   exerciseName: {
     ...typography.subtitle,
-    color: colors.deepNavy,
+    color: colors.pureWhite,
+    fontWeight: '700',
     marginBottom: spacing.xs,
   },
   muscleChip: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -475,17 +499,19 @@ const styles = StyleSheet.create({
   muscleChipText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   setRow: {
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.warmGray2,
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   setRowLogged: {
-    backgroundColor: colors.lightGreen,
+    backgroundColor: 'rgba(16,185,129,0.12)',
     borderRadius: radius.sm,
     borderTopWidth: 0,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.success,
     paddingHorizontal: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
@@ -496,7 +522,7 @@ const styles = StyleSheet.create({
   setNumber: {
     ...typography.caption,
     fontWeight: '700',
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.35)',
     marginBottom: spacing.xs,
   },
   loggedValues: {
@@ -516,60 +542,81 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   inputGroup: {
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
-    gap: spacing.xs,
+  },
+  inputLabel: {
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: 'rgba(255,255,255,0.35)',
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
   input: {
-    borderWidth: 1,
-    borderColor: colors.warmGray2,
+    backgroundColor: colors.navyInput,
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    width: 64,
+    width: '100%',
     textAlign: 'center',
-    ...typography.body,
-    color: colors.deepNavy,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.pureWhite,
     minHeight: spacing.touchMin,
+    paddingVertical: spacing.xs,
   },
   inputUnit: {
-    ...typography.caption,
-    color: colors.mediumGray,
+    fontSize: 8,
+    color: 'rgba(255,255,255,0.25)',
+    marginTop: 2,
   },
   logButton: {
-    backgroundColor: colors.electricBlue,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: spacing.touchMin,
-    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.electricBlue,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.55,
+        shadowRadius: 7,
+      },
+      android: { elevation: 8 },
+    }),
+  },
+  logButtonGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   logButtonDisabled: {
-    backgroundColor: colors.mediumGray,
+    opacity: 0.4,
   },
   inputOptional: {
-    borderStyle: 'dashed',
-    borderColor: colors.mediumGray,
-    opacity: 0.6,
+    opacity: 0.5,
   },
   inputUnitOptional: {
     opacity: 0.5,
   },
   logButtonText: {
-    ...typography.button,
+    fontSize: 24,
+    fontWeight: '800',
     color: colors.pureWhite,
+    lineHeight: 28,
   },
   inlineError: {
     ...typography.caption,
-    color: colors.brightRed,
+    color: 'rgba(255,100,100,1)',
     marginTop: spacing.xs,
   },
   footer: {
-    backgroundColor: colors.pureWhite,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.warmGray2,
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   finishButton: {
     minHeight: spacing.touchMin,

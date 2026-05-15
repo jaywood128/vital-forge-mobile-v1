@@ -50,6 +50,7 @@ export default function HomeScreen() {
   const activeWorkout = workouts?.find((w) => !w.completed);
   const hasActiveWorkout = template?.has_active_workout ?? !!activeWorkout;
 
+
   const handleLogout = async () => {
     try {
       await logout().unwrap();
@@ -92,7 +93,7 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <Screen>
+      <Screen variant="dark">
         <Text style={styles.loadingText}>Loading...</Text>
       </Screen>
     );
@@ -165,7 +166,7 @@ export default function HomeScreen() {
   ) : null;
 
   return (
-    <Screen>
+    <Screen variant="dark">
       <Card style={styles.card}>
         <Text style={styles.title}>Welcome{user?.first_name ? `, ${user.first_name}` : ''}!</Text>
         {user && <Text style={styles.subtitle}>{user.email}</Text>}
@@ -194,17 +195,21 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.title,
+    color: colors.pureWhite,
     marginBottom: spacing.sm,
   },
   subtitle: {
     ...typography.subtitle,
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: spacing.md,
   },
   body: {
     ...typography.body,
+    color: 'rgba(255,255,255,0.7)',
   },
   loadingText: {
     ...typography.body,
+    color: colors.pureWhite,
     textAlign: 'center',
   },
   logoutButton: {
@@ -212,13 +217,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   programmeCard: {
-    borderColor: colors.electricBlue,
-    borderWidth: 2,
+    borderColor: colors.electricBlueLight,
+    borderWidth: 1,
   },
   programmeLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: spacing.xs,
@@ -226,12 +231,12 @@ const styles = StyleSheet.create({
   programmeName: {
     fontSize: 22,
     fontWeight: '700',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: spacing.xs,
   },
   nextUpLabel: {
     ...typography.caption,
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
     fontWeight: '600',
     marginBottom: spacing.md,
   },
@@ -247,7 +252,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   programmeChip: {
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
@@ -255,12 +260,12 @@ const styles = StyleSheet.create({
   programmeChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   prefsTitle: {
     ...typography.subtitle,
     fontWeight: '600',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: spacing.md,
   },
   prefRow: {
@@ -269,19 +274,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.warmGray2,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   prefRowLast: {
     borderBottomWidth: 0,
   },
   prefLabel: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
   },
   prefValue: {
     ...typography.caption,
     fontWeight: '600',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
   },
   complete: {
     color: colors.freshGreen,

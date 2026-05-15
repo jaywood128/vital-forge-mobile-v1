@@ -34,8 +34,10 @@ export default function GoalSelectionScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.deepNavy, colors.deepNavyLight, colors.electricBlue]}
+      colors={[colors.navyDeep, colors.navyMid]}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.lg }]}
@@ -71,36 +73,38 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   title: {
-    ...typography.titleLight,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.pureWhite,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     marginBottom: spacing.xl,
-    opacity: 0.85,
   },
   card: {
-    backgroundColor: colors.pureWhite,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: radius.card,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.warmGray2,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
   cardPressed: {
-    opacity: 0.85,
+    opacity: 0.75,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.deepNavy,
+    fontWeight: '700',
+    color: colors.pureWhite,
     marginBottom: spacing.xs,
   },
   cardDescription: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.5)',
     lineHeight: 20,
   },
 });
