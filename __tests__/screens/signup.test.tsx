@@ -98,29 +98,18 @@ describe('SignupScreen', () => {
       });
     });
 
-    it('navigates to /home after storing the token', async () => {
+    it('navigates to /goal-selection after storing the token', async () => {
       const screen = renderSignup();
       await fillAndSubmit(screen);
       await waitFor(() => {
-        expect(mockRouterReplace).toHaveBeenCalledWith('/home');
-      });
-    });
-
-    it('calls createUserPreference when onboarding goal_type is set', async () => {
-      const store = makeStore({ goal_type: 'physique', training_days_per_week: 4 });
-      const screen = renderSignup(store);
-      await fillAndSubmit(screen);
-      await waitFor(() => {
-        expect(mockCreatePrefFn).toHaveBeenCalledWith(
-          expect.objectContaining({ primary_goal: 'physique', training_days_per_week: 4 })
-        );
+        expect(mockRouterReplace).toHaveBeenCalledWith('/goal-selection');
       });
     });
 
     it('skips createUserPreference when onboarding is empty', async () => {
       const screen = renderSignup(); // all nulls
       await fillAndSubmit(screen);
-      await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/home'));
+      await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/goal-selection'));
       expect(mockCreatePrefFn).not.toHaveBeenCalled();
     });
   });

@@ -44,6 +44,18 @@ Never use `.map()` inside a `ScrollView` for variable-length data. Use `FlatList
 
 `strict: true` is enabled. No implicit `any`. The type `any` is permitted only in `catch (error: any)` error-handling blocks. API response types MUST be explicitly defined (see `authApi.ts` as the reference pattern).
 
+**Type Primitives** — Never use the boxed object types `Number`, `String`, `Boolean`, `Symbol`, or `Object` as type annotations. Always use the lowercase primitives `number`, `string`, `boolean`, `symbol`. Use `object` (lowercase) or a specific interface instead of `Object`.
+
+**`any`** — Do not use `any` as a type. Use `unknown` when the type is genuinely unknown and will not be interacted with directly. The only exception is `catch (e: any)` blocks.
+
+**Callback return types** — Use `void` (not `any`) as the return type for callbacks whose return value is ignored. `void` prevents accidental use of the return value.
+
+**Callback parameters** — Do not mark callback parameters as optional unless the callback truly may be called with fewer arguments. A callback that ignores a parameter is always valid; making the parameter optional changes the contract.
+
+**Function overloads** — Order overloads from most specific to most general (specific first, general last) so TypeScript resolves the correct type. Prefer optional parameters over multiple overloads that differ only in trailing params. Prefer union types (`number | string`) over separate overloads that differ only in one argument's type.
+
+**Generics** — Do not write a generic type that never uses its type parameter — it adds noise with no benefit.
+
 ## Technology Stack
 
 - **Runtime**: React Native 0.81 via Expo SDK 54
@@ -71,4 +83,4 @@ This is intentional — the incomplete tests are for the developer to learn by c
 
 This constitution supersedes all other practices. When in conflict, the constitution wins. All PRs MUST verify compliance with Principles I–VIII. Amendments require: (1) documented rationale, (2) update to this constitution, (3) migration of existing code where applicable. The single source of truth for design tokens is `src/theme/`; any palette change starts there and propagates.
 
-**Version**: 1.1.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-02-24
+**Version**: 1.2.0 | **Ratified**: 2026-02-06 | **Last Amended**: 2026-05-15
