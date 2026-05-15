@@ -1,5 +1,6 @@
 import { View, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing, colors } from '../../theme';
 
 type ScreenProps = {
@@ -9,10 +10,12 @@ type ScreenProps = {
 };
 
 export function Screen({ children, style, variant = 'dark' }: ScreenProps) {
+  const insets = useSafeAreaInsets();
+
   const contentStyle: ViewStyle = {
     flex: 1,
     padding: spacing.md,
-    paddingTop: spacing.xl,
+    paddingTop: insets.top + spacing.md,
   };
 
   if (variant === 'dark') {
