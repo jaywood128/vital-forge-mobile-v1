@@ -5,19 +5,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Development
-npx expo start          # Start Expo dev server
+# Rails API (run from ../vital-forge-v1)
+# -b 0.0.0.0 required — makes the server reachable from a physical phone on the same Wi-Fi
+bin/rails server -b 0.0.0.0 -p 3000
+
+# Expo (run from this directory)
+npx expo start          # Scan QR code with Expo Go on phone
 npx expo start --ios    # Run on iOS simulator
 npx expo start --android # Run on Android emulator
 
 # Linting
 npm run lint            # Run ESLint (Expo flat config)
 
+# Tests
+npx jest --no-coverage  # Run all tests
+
 # Reset
 npm run reset-project   # Reset to boilerplate (destructive)
 ```
 
-There are no test commands configured. Expo's built-in tooling handles builds (EAS Build for production).
+Physical device setup: phone and Mac must be on the same Wi-Fi. `EXPO_PUBLIC_API_URL` in `.env` must match the Mac's local IP (`ipconfig getifaddr en0`). Current value: `http://192.168.1.159:3000`.
+
+There are no test commands configured in package.json. Expo's built-in tooling handles builds (EAS Build for production).
 
 ## Environment
 
@@ -86,6 +95,8 @@ All token files re-exported from `src/theme/index.ts`:
 - JWT in expo-secure-store (authToken key); user data persisted on Rails API backend (001-user-registration)
 - Ruby 3.x / Rails 7.x (backend) · TypeScript 5.9 strict / React Native 0.81 (mobile) + RTK Query, Expo Router 6, expo-secure-store, StyleSheet + src/theme tokens (004-start-workout)
 - PostgreSQL (backend) · No local storage changes (mobile) (004-start-workout)
+- TypeScript 5.9 stric + RTK Query (existing), expo-linear-gradient (existing), expo-router 6 (existing) (007-workout-history)
+- N/A — read-only; no local storage changes (007-workout-history)
 
 ## Recent Changes
 - 001-user-registration: Added TypeScript 5.9 strict, React Native 0.81 + Expo SDK 54, Expo Router 6, Redux Toolkit + RTK Query, expo-secure-store, expo-linear-gradient, `src/components/ui/` primitives (Card, Button, TextField), `src/theme/` tokens

@@ -1,10 +1,14 @@
+import { useCallback } from 'react';
 import { Text, StyleSheet, Alert, View, Pressable } from 'react-native';
-import { useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
-import { useGetPreferenceQuery } from '../src/features/userPreference/userPreferenceApi';
-import { useGetTemplateQuery } from '../src/features/templates/templatesApi';
-import { useGetWorkoutsQuery } from '../src/features/workouts/workoutsApi';
+import { useDispatch } from 'react-redux';
+import { authApi, useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
+import { userPreferenceApi, useGetPreferenceQuery } from '../src/features/userPreference/userPreferenceApi';
+import { templatesApi, useGetTemplateQuery } from '../src/features/templates/templatesApi';
+import { workoutsApi, useGetWorkoutsQuery } from '../src/features/workouts/workoutsApi';
+import { exerciseSetsApi } from '../src/features/workouts/exerciseSetsApi';
+import { goalsApi } from '../src/features/goals/goalsApi';
 import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { colors, spacing, typography, radius } from '../src/theme';
 import { Screen, Card, Button } from '../src/components/ui';
 
@@ -14,17 +18,25 @@ const GOAL_LABEL: Record<string, string> = {
 };
 
 export default function HomeScreen() {
+  const dispatch = useDispatch();
   const { data: user, isLoading } = useGetCurrentUserQuery();
   const { data: preference } = useGetPreferenceQuery();
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const router = useRouter();
 
   const templateId = preference?.selected_workout_template_id ?? 0;
-  const { data: template } = useGetTemplateQuery(templateId, {
+  const { data: template, refetch: refetchTemplate } = useGetTemplateQuery(templateId, {
     skip: !preference?.selected_workout_template_id,
   });
-  const { data: workouts } = useGetWorkoutsQuery();
-  console.log(`Workouts: ${workouts}`)
+
+  const { data: workouts, refetch: refetchWorkouts } = useGetWorkoutsQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchWorkouts();
+      if (preference?.selected_workout_template_id) refetchTemplate();
+    }, [preference?.selected_workout_template_id, refetchTemplate, refetchWorkouts])
+  );
   const completedCount =
     workouts?.filter(
       (w) => w.completed && w.workout_template_id === templateId
@@ -35,7 +47,9 @@ export default function HomeScreen() {
   const nextDayData = template?.days?.find((d) => d.day_number === nextDay);
   const nextDayName = nextDayData?.name ?? `Day ${nextDay}`;
 
-  const hasActiveWorkout = template?.has_active_workout ?? false;
+  const activeWorkout = workouts?.find((w) => !w.completed);
+  const hasActiveWorkout = template?.has_active_workout ?? !!activeWorkout;
+
 
   const handleLogout = async () => {
     try {
@@ -44,6 +58,13 @@ export default function HomeScreen() {
     try {
       await SecureStore.deleteItemAsync('authToken');
     } catch {}
+    // Clear all RTK Query caches so a subsequent login doesn't see stale data from this user
+    dispatch(authApi.util.resetApiState());
+    dispatch(workoutsApi.util.resetApiState());
+    dispatch(exerciseSetsApi.util.resetApiState());
+    dispatch(templatesApi.util.resetApiState());
+    dispatch(goalsApi.util.resetApiState());
+    dispatch(userPreferenceApi.util.resetApiState());
     Alert.alert('Logged out', 'You have been logged out.');
     router.replace('/login');
   };
@@ -60,13 +81,19 @@ export default function HomeScreen() {
   };
 
   const handleResumePress = () => {
-    // Feature 005 placeholder — navigate home with active workout context
-    router.push('/home');
+    if (!activeWorkout) return;
+    router.push({
+      pathname: '/active-workout',
+      params: {
+        workoutId: String(activeWorkout.id),
+        dayName: activeWorkout.name ?? '',
+      },
+    });
   };
 
   if (isLoading) {
     return (
-      <Screen>
+      <Screen variant="dark">
         <Text style={styles.loadingText}>Loading...</Text>
       </Screen>
     );
@@ -74,10 +101,22 @@ export default function HomeScreen() {
 
   const activeProgrammeCard = preference?.selected_workout_template_name ? (
     <>
-      {hasActiveWorkout ? (
-        <Card style={[styles.card, styles.programmeCard]}>
+      <Pressable
+        onPress={hasActiveWorkout ? handleResumePress : handleCardPress}
+        accessibilityRole="button"
+        accessibilityLabel={hasActiveWorkout ? 'Resume in-progress workout' : `Start workout: ${nextDayName}`}
+        style={({ pressed }) => [pressed && styles.cardPressed]}
+      >
+        <Card variant="light" style={[styles.card, styles.programmeCard]}>
           <Text style={styles.programmeLabel}>Active Programme</Text>
           <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
+          {hasActiveWorkout ? (
+            <Text style={styles.resumeLabel}>In Progress — Tap to Resume</Text>
+          ) : (
+            <Text style={styles.nextUpLabel}>
+              Next Up: Day {nextDay} — {nextDayName}
+            </Text>
+          )}
           <View style={styles.programmeMeta}>
             {preference.primary_goal && (
               <View style={styles.programmeChip}>
@@ -96,51 +135,10 @@ export default function HomeScreen() {
             )}
           </View>
         </Card>
-      ) : (
-        <Pressable
-          onPress={handleCardPress}
-          accessibilityRole="button"
-          accessibilityLabel={`Start workout: ${nextDayName}`}
-          style={({ pressed }) => [pressed && styles.cardPressed]}
-        >
-          <Card style={[styles.card, styles.programmeCard]}>
-            <Text style={styles.programmeLabel}>Active Programme</Text>
-            <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
-            <Text style={styles.nextUpLabel}>
-              Next Up: Day {nextDay} — {nextDayName}
-            </Text>
-            <View style={styles.programmeMeta}>
-              {preference.primary_goal && (
-                <View style={styles.programmeChip}>
-                  <Text style={styles.programmeChipText}>{GOAL_LABEL[preference.primary_goal] ?? preference.primary_goal}</Text>
-                </View>
-              )}
-              {preference.training_days_per_week && (
-                <View style={styles.programmeChip}>
-                  <Text style={styles.programmeChipText}>{preference.training_days_per_week} days/week</Text>
-                </View>
-              )}
-              {preference.experience_level && (
-                <View style={styles.programmeChip}>
-                  <Text style={styles.programmeChipText}>{preference.experience_level}</Text>
-                </View>
-              )}
-            </View>
-          </Card>
-        </Pressable>
-      )}
-
-      {hasActiveWorkout && (
-        <Button
-          title="Resume Workout"
-          onPress={handleResumePress}
-          variant="primary"
-          style={styles.resumeButton}
-        />
-      )}
+      </Pressable>
     </>
   ) : preference ? (
-    <Card style={styles.card}>
+    <Card variant="light" style={styles.card}>
       <Text style={styles.prefsTitle}>Your Preferences</Text>
       <View style={styles.prefRow}>
         <Text style={styles.prefLabel}>Goal</Text>
@@ -168,7 +166,7 @@ export default function HomeScreen() {
   ) : null;
 
   return (
-    <Screen>
+    <Screen variant="dark">
       <Card style={styles.card}>
         <Text style={styles.title}>Welcome{user?.first_name ? `, ${user.first_name}` : ''}!</Text>
         {user && <Text style={styles.subtitle}>{user.email}</Text>}
@@ -176,6 +174,13 @@ export default function HomeScreen() {
       </Card>
 
       {activeProgrammeCard}
+
+      <Button
+        title="History"
+        onPress={() => router.push('/history')}
+        variant="secondary"
+        style={styles.historyButton}
+      />
 
       <Button
         title={isLoggingOut ? 'Logging out...' : 'Logout'}
@@ -197,34 +202,38 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.title,
+    color: colors.pureWhite,
     marginBottom: spacing.sm,
   },
   subtitle: {
     ...typography.subtitle,
+    color: 'rgba(255,255,255,0.5)',
     marginBottom: spacing.md,
   },
   body: {
     ...typography.body,
+    color: 'rgba(255,255,255,0.7)',
   },
   loadingText: {
     ...typography.body,
+    color: colors.pureWhite,
     textAlign: 'center',
+  },
+  historyButton: {
+    marginBottom: spacing.md,
   },
   logoutButton: {
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
   },
-  resumeButton: {
-    marginBottom: spacing.lg,
-  },
   programmeCard: {
-    borderColor: colors.electricBlue,
-    borderWidth: 2,
+    borderColor: colors.electricBlueLight,
+    borderWidth: 1,
   },
   programmeLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: spacing.xs,
@@ -232,12 +241,18 @@ const styles = StyleSheet.create({
   programmeName: {
     fontSize: 22,
     fontWeight: '700',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: spacing.xs,
   },
   nextUpLabel: {
     ...typography.caption,
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  resumeLabel: {
+    ...typography.caption,
+    color: colors.energeticOrange,
     fontWeight: '600',
     marginBottom: spacing.md,
   },
@@ -247,7 +262,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   programmeChip: {
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
@@ -255,12 +270,12 @@ const styles = StyleSheet.create({
   programmeChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   prefsTitle: {
     ...typography.subtitle,
     fontWeight: '600',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: spacing.md,
   },
   prefRow: {
@@ -269,19 +284,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.warmGray2,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   prefRowLast: {
     borderBottomWidth: 0,
   },
   prefLabel: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
   },
   prefValue: {
     ...typography.caption,
     fontWeight: '600',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
   },
   complete: {
     color: colors.freshGreen,

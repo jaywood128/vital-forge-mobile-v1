@@ -43,12 +43,14 @@ export default function WorkoutPreviewScreen() {
   const handleStartWorkout = async () => {
     if (!templateId || !dayNumber) return;
     try {
-      await startWorkout({
+      const result = await startWorkout({
         templateId: Number(templateId),
         day_number: Number(dayNumber),
       }).unwrap();
-      // Feature 005 placeholder — navigate home until active workout screen exists
-      router.replace('/home');
+      router.replace({
+        pathname: '/active-workout',
+        params: { workoutId: String(result.workout.id), dayName: dayName ?? '' },
+      });
     } catch (err: any) {
       if (err?.status === 409) {
         Alert.alert(
@@ -57,7 +59,14 @@ export default function WorkoutPreviewScreen() {
           [
             {
               text: 'Resume',
-              onPress: () => router.replace('/home'),
+              onPress: () => {
+                if (err.data?.active_workout_id) {
+                  router.replace({
+                    pathname: '/active-workout',
+                    params: { workoutId: String(err.data.active_workout_id) },
+                  });
+                }
+              },
             },
             { text: 'Cancel', style: 'cancel' },
           ]
@@ -72,15 +81,15 @@ export default function WorkoutPreviewScreen() {
 
   if (isLoading) {
     return (
-      <Screen>
-        <ActivityIndicator size="large" color={colors.electricBlue} style={styles.loader} />
+      <Screen variant="dark">
+        <ActivityIndicator size="large" color={colors.pureWhite} style={styles.loader} />
       </Screen>
     );
   }
 
   if (isError || !template) {
     return (
-      <Screen>
+      <Screen variant="dark">
         <Text style={styles.errorText}>Failed to load workout details.</Text>
         <Button title="Retry" onPress={refetch} variant="secondary" style={styles.retryButton} />
       </Screen>
@@ -88,7 +97,7 @@ export default function WorkoutPreviewScreen() {
   }
 
   return (
-    <Screen>
+    <Screen variant="dark">
       <Card style={styles.headerCard}>
         <Text style={styles.programmeName}>{template.name}</Text>
         <View style={styles.chips}>
@@ -140,7 +149,7 @@ const styles = StyleSheet.create({
   errorText: {
     ...typography.body,
     textAlign: 'center',
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.5)',
     marginTop: spacing.xxl,
     marginBottom: spacing.md,
   },
@@ -153,7 +162,7 @@ const styles = StyleSheet.create({
   programmeName: {
     fontSize: 20,
     fontWeight: '700',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: spacing.sm,
   },
   chips: {
@@ -163,7 +172,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   chip: {
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
@@ -171,12 +180,12 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   dayLabel: {
     ...typography.caption,
     fontWeight: '700',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -190,7 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.warmGray2,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   exerciseInfo: {
     flex: 1,
@@ -198,12 +207,12 @@ const styles = StyleSheet.create({
   },
   exerciseName: {
     ...typography.subtitle,
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: spacing.xs,
   },
   muscleChip: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -211,7 +220,7 @@ const styles = StyleSheet.create({
   muscleChipText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   setsBadge: {
     alignItems: 'flex-end',
@@ -219,16 +228,16 @@ const styles = StyleSheet.create({
   setsText: {
     ...typography.caption,
     fontWeight: '700',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
   },
   repsText: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
   },
   emptyText: {
     ...typography.body,
     textAlign: 'center',
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
     marginTop: spacing.xl,
   },
   footer: {

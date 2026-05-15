@@ -1,11 +1,11 @@
-import { Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { Text, Pressable, StyleSheet, Alert, View } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLoginMutation } from '../src/features/auth/authApi';
 import * as SecureStore from 'expo-secure-store';
 import { colors, spacing, typography } from '../src/theme';
-import { Card, Button, TextField } from '../src/components/ui';
+import { Button, TextField } from '../src/components/ui';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -18,7 +18,6 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
-
     try {
       const result = await login({ email, password }).unwrap();
       if (result.token) {
@@ -32,11 +31,14 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.deepNavy, colors.deepNavyLight, colors.electricBlue]}
-      style={styles.gradient}
+      colors={[colors.navyDeep, colors.navyMid]}
+      style={styles.container}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
-      <Card style={styles.card}>
+      <View style={styles.content}>
         <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to continue</Text>
 
         <TextField
           placeholder="Email"
@@ -54,36 +56,44 @@ export default function LoginScreen() {
         />
 
         <Button
-          title={isLoading ? 'Logging in...' : 'Login'}
+          title={isLoading ? 'Logging in...' : 'Log In'}
           onPress={handleLogin}
           disabled={isLoading}
           variant="primary"
         />
 
         <Pressable onPress={() => router.push('/signup')} style={styles.linkTouch}>
-          <Text style={styles.signupText}>
-            {"Don't have an account?"} <Text style={styles.link}>Sign up</Text>
+          <Text style={styles.linkText}>
+            {"Don't have an account? "}
+            <Text style={styles.link}>Sign up</Text>
           </Text>
         </Pressable>
-      </Card>
+      </View>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  container: {
     flex: 1,
     justifyContent: 'center',
     padding: spacing.md,
   },
-  card: {
-    marginVertical: 0,
+  content: {
+    width: '100%',
   },
   title: {
-    ...typography.title,
-    color: colors.deepNavy,
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.pureWhite,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    ...typography.body,
+    color: 'rgba(255,255,255,0.5)',
+    textAlign: 'center',
+    marginBottom: spacing.xl,
   },
   linkTouch: {
     paddingVertical: spacing.md,
@@ -91,11 +101,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.sm,
   },
-  signupText: {
+  linkText: {
     ...typography.caption,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
   },
   link: {
-    ...typography.link,
+    color: colors.electricBlueLight,
+    fontWeight: '600',
   },
 });

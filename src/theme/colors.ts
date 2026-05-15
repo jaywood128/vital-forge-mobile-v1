@@ -27,6 +27,17 @@ export const colors = {
   energeticOrangeDark: '#EA580C',
   deepNavyLight: '#334155',
   warmGray2: '#E2E8F0',
+
+  // Semantic
+  success: '#10B981',
+  lightGreen: '#D1FAE5',
+
+  // Dark navy theme (006-ui-redesign)
+  navyDeep: '#0a1628',
+  navyMid: '#0f1e3c',
+  navyCard: '#152035',
+  navyInput: '#0d1827',
+  electricBlueLight: '#6eb3f5',
 } as const;
 
 export type ColorKey = keyof typeof colors;
