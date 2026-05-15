@@ -26,6 +26,15 @@ function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function validatePhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 15;
+}
+
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -238,6 +247,21 @@ const styles = StyleSheet.create({
   link: {
     color: colors.electricBlueLight,
     fontWeight: '600',
+  },
+  inputError: {
+    borderColor: colors.brightRed,
+  },
+  phoneError: {
+    ...typography.caption,
+    color: colors.brightRed,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  fieldError: {
+    ...typography.caption,
+    color: colors.brightRed,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
   },
   inputError: {
     borderColor: colors.brightRed,
