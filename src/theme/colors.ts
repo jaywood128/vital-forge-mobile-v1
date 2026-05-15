@@ -32,7 +32,7 @@ export const colors = {
   success: '#10B981',
   lightGreen: '#D1FAE5',
 
-  // Dark navy theme (007-workout-history)
+  // Dark navy theme (006-ui-redesign)
   navyDeep: '#0a1628',
   navyMid: '#0f1e3c',
   navyCard: '#152035',

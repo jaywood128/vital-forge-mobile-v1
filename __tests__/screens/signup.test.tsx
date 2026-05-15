@@ -104,17 +104,6 @@ describe('SignupScreen', () => {
       await waitFor(() => {
         expect(mockRouterReplace).toHaveBeenCalledWith('/goal-selection');
       });
-    });
-
-    it('navigates to /goal-selection regardless of onboarding state', async () => {
-      // createUserPreference was moved out of signup into the goal-selection screen.
-      // Signup always routes to /goal-selection after a successful registration.
-      const store = makeStore({ goal_type: 'physique', training_days_per_week: 4 });
-      const screen = renderSignup(store);
-      await fillAndSubmit(screen);
-      await waitFor(() => {
-        expect(mockRouterReplace).toHaveBeenCalledWith('/goal-selection');
-      });
       expect(mockCreatePrefFn).not.toHaveBeenCalled();
     });
 

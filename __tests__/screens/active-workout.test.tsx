@@ -257,7 +257,7 @@ describe('ActiveWorkoutScreen', () => {
       isError: false,
       refetch: jest.fn(),
     });
-    const { getByLabelText } = render(<ActiveWorkoutScreen />);
+    const { getByText, getByLabelText } = render(<ActiveWorkoutScreen />);
     await act(async () => {
       fireEvent.press(getByLabelText('Log set'));
     });
@@ -271,7 +271,7 @@ describe('ActiveWorkoutScreen', () => {
       isError: false,
       refetch: jest.fn(),
     });
-    const { getByLabelText, getByText, queryByText } = render(<ActiveWorkoutScreen />);
+    const { getByText, queryByText, getByLabelText } = render(<ActiveWorkoutScreen />);
     await act(async () => {
       fireEvent.press(getByLabelText('Log set'));
     });

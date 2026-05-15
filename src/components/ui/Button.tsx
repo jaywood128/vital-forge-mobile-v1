@@ -1,4 +1,5 @@
-import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radius, spacing, typography } from '../../theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'destructive';
@@ -11,40 +12,80 @@ type ButtonProps = {
   style?: ViewStyle;
 };
 
-const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
-  primary: { bg: colors.energeticOrange, text: colors.pureWhite },
-  secondary: { bg: 'transparent', text: colors.electricBlue, border: colors.electricBlue },
-  destructive: { bg: 'transparent', text: colors.brightRed, border: colors.brightRed },
-};
-
 export function Button({ title, onPress, disabled, variant = 'primary', style }: ButtonProps) {
-  const v = variantStyles[variant];
+  if (variant === 'primary') {
+    return (
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.base,
+          { opacity: disabled ? 0.6 : pressed ? 0.85 : 1 },
+          style,
+        ]}
+      >
+        <LinearGradient
+          colors={[colors.energeticOrange, '#f07c0a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[
+            styles.gradient,
+            Platform.select({
+              ios: {
+                shadowColor: colors.energeticOrange,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.35,
+                shadowRadius: 8,
+              },
+              android: { elevation: 6 },
+            }),
+          ]}
+        >
+          <Text style={[styles.text, { color: colors.pureWhite }]}>{title}</Text>
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  const borderColor = variant === 'destructive' ? colors.brightRed : colors.electricBlueLight;
+  const textColor = variant === 'destructive' ? colors.brightRed : colors.electricBlueLight;
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.base,
+        styles.outlined,
         {
-          backgroundColor: v.bg,
-          borderWidth: v.border ? 2 : 0,
-          borderColor: v.border,
-          opacity: disabled ? 0.6 : pressed ? 0.9 : 1,
+          borderColor,
+          opacity: disabled ? 0.6 : pressed ? 0.85 : 1,
         },
         style,
       ]}
     >
-      <Text style={[styles.text, { color: v.text }]}>{title}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{title}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: spacing.md,
     minHeight: spacing.touchMin,
     borderRadius: radius.sm,
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  gradient: {
+    paddingVertical: spacing.md,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outlined: {
+    paddingVertical: spacing.md,
+    borderWidth: 2,
+    backgroundColor: 'transparent',
   },
   text: {
     ...typography.button,
