@@ -76,7 +76,7 @@ function ExpandableTemplateCard({
       {expanded && (
         <View style={styles.exerciseList}>
           {isFetching ? (
-            <ActivityIndicator color={colors.electricBlue} size="small" style={styles.exerciseLoader} />
+            <ActivityIndicator color={colors.electricBlueLight} size="small" style={styles.exerciseLoader} />
           ) : (
             exercises
               .slice()
@@ -127,8 +127,10 @@ export default function TemplatePreviewScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.deepNavy, colors.deepNavyLight, colors.electricBlue]}
+      colors={[colors.navyDeep, colors.navyMid]}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
@@ -168,7 +170,14 @@ export default function TemplatePreviewScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go to dashboard"
         >
-          <Text style={styles.ctaText}>Go to Dashboard</Text>
+          <LinearGradient
+            colors={[colors.energeticOrange, '#f07c0a']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.ctaGradient}
+          >
+            <Text style={styles.ctaText}>Go to Dashboard</Text>
+          </LinearGradient>
         </Pressable>
       </ScrollView>
     </LinearGradient>
@@ -188,7 +197,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   backText: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.6)',
     fontWeight: '600',
   },
   scroll: {
@@ -200,36 +210,37 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
   },
   title: {
-    ...typography.titleLight,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.pureWhite,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     marginBottom: spacing.xl,
-    opacity: 0.85,
   },
   loader: {
     marginTop: spacing.xl,
   },
   errorText: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
-    opacity: 0.8,
     marginBottom: spacing.lg,
   },
-  // Template card
   card: {
-    backgroundColor: colors.pureWhite,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: radius.card,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.warmGray2,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
   cardSelected: {
-    borderColor: colors.electricBlue,
+    borderColor: colors.electricBlueLight,
     borderWidth: 2,
   },
   cardHeader: {
@@ -240,13 +251,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.deepNavy,
+    fontWeight: '700',
+    color: colors.pureWhite,
     flex: 1,
     marginRight: spacing.sm,
   },
   badge: {
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -254,11 +265,11 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   cardDescription: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.5)',
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
@@ -271,22 +282,20 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
   },
   metaDot: {
     fontSize: 12,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.2)',
   },
-  // Card actions row
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: colors.warmGray2,
+    borderTopColor: 'rgba(255,255,255,0.08)',
     marginTop: spacing.xs,
   },
-  // Expand toggle
   expandToggle: {
     paddingVertical: spacing.sm,
     flex: 1,
@@ -297,18 +306,19 @@ const styles = StyleSheet.create({
   expandToggleText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   selectButton: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.electricBlue,
+    borderColor: colors.electricBlueLight,
     marginLeft: spacing.sm,
   },
   selectButtonActive: {
     backgroundColor: colors.electricBlue,
+    borderColor: colors.electricBlue,
   },
   selectButtonPressed: {
     opacity: 0.7,
@@ -316,12 +326,11 @@ const styles = StyleSheet.create({
   selectButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   selectButtonTextActive: {
     color: colors.pureWhite,
   },
-  // Exercise list
   exerciseList: {
     marginTop: spacing.sm,
   },
@@ -333,13 +342,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.warmGray,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   exerciseIndex: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.lightBlue,
+    backgroundColor: 'rgba(74,144,217,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
@@ -348,7 +357,7 @@ const styles = StyleSheet.create({
   exerciseIndexText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.electricBlue,
+    color: colors.electricBlueLight,
   },
   exerciseInfo: {
     flex: 1,
@@ -356,33 +365,39 @@ const styles = StyleSheet.create({
   exerciseName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     marginBottom: 2,
   },
   exerciseMeta: {
     fontSize: 12,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.4)',
   },
   exerciseNotes: {
     fontSize: 12,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.35)',
     fontStyle: 'italic',
     marginTop: 2,
   },
-  // CTA
   ctaButton: {
-    backgroundColor: colors.pureWhite,
-    borderRadius: radius.card,
-    padding: spacing.md,
-    alignItems: 'center',
+    borderRadius: radius.sm,
     marginTop: spacing.lg,
+    overflow: 'hidden',
+    shadowColor: colors.energeticOrange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
   ctaButtonPressed: {
     opacity: 0.85,
   },
+  ctaGradient: {
+    padding: spacing.md,
+    alignItems: 'center',
+  },
   ctaText: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
   },
 });

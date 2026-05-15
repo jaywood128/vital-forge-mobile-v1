@@ -138,7 +138,7 @@ describe('ActiveWorkoutScreen', () => {
     const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
     expect(mockLogSetFn).toHaveBeenCalledWith({ id: 1, weight: 100, reps: 10, completed: true });
   });
@@ -148,9 +148,9 @@ describe('ActiveWorkoutScreen', () => {
     const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     act(() => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
-    expect(getByText('...')).toBeTruthy();
+    expect(getByLabelText('Saving...')).toBeTruthy();
   });
 
   it('Log button re-enables after save failure', async () => {
@@ -161,16 +161,16 @@ describe('ActiveWorkoutScreen', () => {
     const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
-    expect(getByText('Log')).toBeTruthy();
+    expect(getByLabelText('Log set')).toBeTruthy();
   });
 
   it('set row shows static values with logged badge after successful save', async () => {
     const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
     expect(getByText('100 lbs × 10 reps')).toBeTruthy();
     expect(getByText('✓')).toBeTruthy();
@@ -184,7 +184,7 @@ describe('ActiveWorkoutScreen', () => {
     const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '80');
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
     expect(getByText('Failed to save set. Tap Log to retry.')).toBeTruthy();
     expect(getByLabelText('Weight for set 1').props.value).toBe('80');
@@ -194,12 +194,12 @@ describe('ActiveWorkoutScreen', () => {
     const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
     await act(async () => {
       fireEvent.press(getByLabelText('Set 1 logged. Tap to edit.'));
     });
-    expect(getByText('Log')).toBeTruthy();
+    expect(getByLabelText('Log set')).toBeTruthy();
   });
 
   it('input values survive re-render (state held at screen level)', () => {
@@ -257,9 +257,9 @@ describe('ActiveWorkoutScreen', () => {
       isError: false,
       refetch: jest.fn(),
     });
-    const { getByText } = render(<ActiveWorkoutScreen />);
+    const { getByText, getByLabelText } = render(<ActiveWorkoutScreen />);
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
     expect(mockLogSetFn).toHaveBeenCalledWith({ id: 1, weight: null, reps: 10, completed: true });
   });
@@ -271,9 +271,9 @@ describe('ActiveWorkoutScreen', () => {
       isError: false,
       refetch: jest.fn(),
     });
-    const { getByText, queryByText } = render(<ActiveWorkoutScreen />);
+    const { getByText, queryByText, getByLabelText } = render(<ActiveWorkoutScreen />);
     await act(async () => {
-      fireEvent.press(getByText('Log'));
+      fireEvent.press(getByLabelText('Log set'));
     });
     expect(getByText('10 reps')).toBeTruthy();
     expect(getByText('✓')).toBeTruthy();
@@ -308,7 +308,7 @@ describe('ActiveWorkoutScreen', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('Set 1 logged. Tap to edit.'));
     });
-    expect(getByText('Log')).toBeTruthy();
+    expect(getByLabelText('Log set')).toBeTruthy();
   });
 
   it('resumed bodyweight set (weight null) shows as locked', () => {
