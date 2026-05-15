@@ -16,8 +16,10 @@ export default function TrainingDaysScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.deepNavy, colors.deepNavyLight, colors.electricBlue]}
+      colors={[colors.navyDeep, colors.navyMid]}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
@@ -60,25 +62,27 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   backText: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.6)',
     fontWeight: '600',
   },
   content: {
     flex: 1,
     padding: spacing.md,
     paddingTop: spacing.xl,
-    justifyContent: 'center',
   },
   title: {
-    ...typography.titleLight,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.pureWhite,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     marginBottom: spacing.xl,
-    opacity: 0.85,
   },
   grid: {
     flexDirection: 'row',
@@ -87,27 +91,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayCard: {
-    backgroundColor: colors.pureWhite,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
     width: 140,
     height: 140,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.warmGray2,
   },
   dayCardPressed: {
-    opacity: 0.85,
+    opacity: 0.75,
+    borderColor: colors.electricBlueLight,
   },
   dayNumber: {
     fontSize: 48,
     fontWeight: '700',
-    color: colors.deepNavy,
+    color: colors.pureWhite,
     lineHeight: 56,
   },
   dayLabel: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.5)',
     marginTop: spacing.xs,
   },
 });

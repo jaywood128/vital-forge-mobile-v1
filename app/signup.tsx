@@ -1,15 +1,21 @@
-import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform, TextInput } from 'react-native';
+import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform, TextInput, View } from 'react-native';
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSelector, useDispatch } from 'react-redux';
 import { useSignupMutation } from '../src/features/auth/authApi';
-import { useCreateUserPreferenceMutation } from '../src/features/preferences/preferencesApi';
-import { clearOnboarding } from '../src/store/onboardingSlice';
-import type { RootState } from '../src/store/store';
 import * as SecureStore from 'expo-secure-store';
 import { colors, spacing, typography } from '../src/theme';
-import { Card, Button, TextField } from '../src/components/ui';
+import { Button, TextField } from '../src/components/ui';
+
+function validatePhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 15;
+}
+
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 function validatePhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, '');
@@ -96,8 +102,10 @@ export default function SignupScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.deepNavy, colors.deepNavyLight, colors.electricBlue]}
+      colors={[colors.navyDeep, colors.navyMid]}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -107,7 +115,7 @@ export default function SignupScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <Card style={styles.card}>
+          <View style={styles.card}>
             <Text style={styles.title}>Create Account</Text>
 
             <TextField
@@ -187,7 +195,7 @@ export default function SignupScreen() {
                 Already have an account? <Text style={styles.link}>Log in</Text>
               </Text>
             </Pressable>
-          </Card>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -210,10 +218,11 @@ const styles = StyleSheet.create({
     marginVertical: 0,
   },
   title: {
-    ...typography.title,
-    color: colors.deepNavy,
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.pureWhite,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xs,
   },
   linkTouch: {
     paddingVertical: spacing.md,
@@ -223,10 +232,27 @@ const styles = StyleSheet.create({
   },
   loginText: {
     ...typography.caption,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
   },
   link: {
-    ...typography.link,
+    color: colors.electricBlueLight,
+    fontWeight: '600',
+  },
+  inputError: {
+    borderColor: colors.brightRed,
+  },
+  phoneError: {
+    ...typography.caption,
+    color: colors.brightRed,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  fieldError: {
+    ...typography.caption,
+    color: colors.brightRed,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
   },
   inputError: {
     borderColor: colors.brightRed,

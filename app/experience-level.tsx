@@ -49,18 +49,17 @@ export default function ExperienceLevelScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.deepNavy, colors.deepNavyLight, colors.electricBlue]}
+      colors={[colors.navyDeep, colors.navyMid]}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
         <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>← Back</Text>
         </Pressable>
       </SafeAreaView>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Your experience level?</Text>
         <Text style={styles.subtitle}>We use this to match you with the right programme.</Text>
 
@@ -94,7 +93,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   backText: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.6)',
     fontWeight: '600',
   },
   scrollContent: {
@@ -104,36 +104,39 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   title: {
-    ...typography.titleLight,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.pureWhite,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
-    ...typography.bodyLight,
+    ...typography.body,
+    color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
     marginBottom: spacing.xl,
-    opacity: 0.85,
   },
   card: {
-    backgroundColor: colors.pureWhite,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: radius.card,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.warmGray2,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
   cardPressed: {
-    opacity: 0.85,
+    opacity: 0.75,
+    borderColor: colors.electricBlueLight,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.deepNavy,
+    fontWeight: '700',
+    color: colors.pureWhite,
     marginBottom: spacing.xs,
   },
   cardDescription: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.5)',
     lineHeight: 20,
   },
 });
