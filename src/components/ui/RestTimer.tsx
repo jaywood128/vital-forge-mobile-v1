@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { colors, spacing, typography } from '../../theme';
 
@@ -15,8 +16,12 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const GRADIENT_NORMAL: [string, string] = ['#00E5FF', '#0080FF'];
+const GRADIENT_LOW: [string, string]    = ['#FF4500', '#FF2D78'];
+
 export function RestTimer({ duration, onComplete, onSkip }: Props) {
   const [remaining, setRemaining] = useState(duration);
+  const [trackWidth, setTrackWidth] = useState(0);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
@@ -35,19 +40,47 @@ export function RestTimer({ duration, onComplete, onSkip }: Props) {
   }, [remaining]);
 
   const isLow = remaining <= 10;
-  const barColor = isLow ? colors.brightRed : colors.electricBlueLight;
-  const barWidth = `${(remaining / duration) * 100}%` as `${number}%`;
+  const progress = remaining / duration;
+  const gradient = isLow ? GRADIENT_LOW : GRADIENT_NORMAL;
+  const glowColor = isLow ? '#FF4500' : '#00E5FF';
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
         <Text style={styles.label}>Rest</Text>
-        <View style={styles.barTrack}>
-          <View style={[styles.barFill, { width: barWidth, backgroundColor: barColor }]} />
+
+        <View
+          style={styles.barTrack}
+          onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+        >
+          <View style={[styles.barFill, { width: `${progress * 100}%` }]}>
+            {trackWidth > 0 && (
+              <LinearGradient
+                colors={gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                  styles.barGradient,
+                  { width: trackWidth },
+                  Platform.select({
+                    ios: {
+                      shadowColor: glowColor,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.9,
+                      shadowRadius: 6,
+                    },
+                    android: { elevation: 4 },
+                  }),
+                ]}
+              />
+            )}
+          </View>
         </View>
+
         <Text style={[styles.countdown, isLow && styles.countdownLow]}>
           {formatTime(remaining)}
         </Text>
+
         <Pressable
           onPress={onSkip}
           hitSlop={12}
@@ -63,11 +96,11 @@ export function RestTimer({ duration, onComplete, onSkip }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.pureWhite,
+    backgroundColor: colors.navyDeep,
     borderTopWidth: 1,
-    borderTopColor: colors.warmGray2,
+    borderTopColor: 'rgba(255,255,255,0.08)',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   row: {
     flexDirection: 'row',
@@ -76,33 +109,38 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.45)',
     width: 32,
   },
   barTrack: {
     flex: 1,
-    height: 6,
-    backgroundColor: colors.warmGray2,
-    borderRadius: 3,
+    height: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 5,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    borderRadius: 3,
+    overflow: 'hidden',
+    borderRadius: 5,
+  },
+  barGradient: {
+    height: '100%',
+    borderRadius: 5,
   },
   countdown: {
     ...typography.caption,
-    fontWeight: '600',
-    color: colors.darkCharcoal,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.85)',
     minWidth: 36,
     textAlign: 'right',
   },
   countdownLow: {
-    color: colors.brightRed,
+    color: '#FF4500',
   },
   skip: {
     ...typography.caption,
-    color: colors.mediumGray,
+    color: 'rgba(255,255,255,0.35)',
     minWidth: 32,
     textAlign: 'right',
   },

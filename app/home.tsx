@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
-import { Text, StyleSheet, Alert, View, Pressable } from 'react-native';
+import { Text, StyleSheet, Alert, View, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { authApi, useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
 import { userPreferenceApi, useGetPreferenceQuery } from '../src/features/userPreference/userPreferenceApi';
@@ -11,7 +12,7 @@ import { goalsApi } from '../src/features/goals/goalsApi';
 import * as SecureStore from 'expo-secure-store';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { colors, spacing, typography, radius } from '../src/theme';
-import { Screen, Card, Button } from '../src/components/ui';
+import { Screen, Card } from '../src/components/ui';
 
 const GOAL_LABEL: Record<string, string> = {
   physique: 'Build Muscle',
@@ -167,12 +168,39 @@ export default function HomeScreen() {
             </View>
           </Card>
 
-          <Button
-            title={hasActiveWorkout ? 'Resume Workout' : `Start Day ${nextDay} — ${nextDayName}`}
+          <Pressable
             onPress={handleCTAPress}
-            variant="primary"
-            style={styles.ctaButton}
-          />
+            style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={hasActiveWorkout ? 'Resume Workout' : `Start Day ${nextDay} — ${nextDayName}`}
+          >
+            <LinearGradient
+              colors={hasActiveWorkout
+                ? [colors.success, '#059669']
+                : [colors.energeticOrange, '#f07c0a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.ctaGradient, Platform.select({
+                ios: {
+                  shadowColor: hasActiveWorkout ? colors.success : colors.energeticOrange,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 10,
+                },
+                android: { elevation: 6 },
+              })]}
+            >
+              <Ionicons
+                name={hasActiveWorkout ? 'play-circle' : 'flash'}
+                size={22}
+                color={colors.pureWhite}
+                style={styles.ctaIcon}
+              />
+              <Text style={styles.ctaText}>
+                {hasActiveWorkout ? 'Resume Workout' : `Start Day ${nextDay} — ${nextDayName}`}
+              </Text>
+            </LinearGradient>
+          </Pressable>
         </>
       ) : null}
 
@@ -265,6 +293,29 @@ const styles = StyleSheet.create({
   },
   ctaButton: {
     marginBottom: spacing.xl,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  ctaPressed: {
+    opacity: 0.88,
+  },
+  ctaGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+  },
+  ctaIcon: {
+    marginRight: 2,
+  },
+  ctaText: {
+    ...typography.button,
+    color: colors.pureWhite,
+    fontSize: 16,
+    fontWeight: '700',
   },
   historyRow: {
     flexDirection: 'row',

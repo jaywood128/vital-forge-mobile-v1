@@ -16,23 +16,35 @@ const mockDispatch = jest.fn();
 
 const mockUseGetCurrentUserQuery = jest.fn();
 jest.mock('../../src/features/auth/authApi', () => ({
+  authApi: { util: { resetApiState: jest.fn() } },
   useGetCurrentUserQuery: () => mockUseGetCurrentUserQuery(),
   useLogoutMutation: () => [jest.fn().mockReturnValue({ unwrap: () => Promise.resolve() }), { isLoading: false }],
 }));
 
 const mockUseGetPreferenceQuery = jest.fn();
 jest.mock('../../src/features/userPreference/userPreferenceApi', () => ({
+  userPreferenceApi: { util: { resetApiState: jest.fn() } },
   useGetPreferenceQuery: () => mockUseGetPreferenceQuery(),
 }));
 
 const mockUseGetTemplateQuery = jest.fn();
 jest.mock('../../src/features/templates/templatesApi', () => ({
+  templatesApi: { util: { resetApiState: jest.fn() } },
   useGetTemplateQuery: () => mockUseGetTemplateQuery(),
 }));
 
 const mockUseGetWorkoutsQuery = jest.fn();
 jest.mock('../../src/features/workouts/workoutsApi', () => ({
+  workoutsApi: { util: { resetApiState: jest.fn() } },
   useGetWorkoutsQuery: () => mockUseGetWorkoutsQuery(),
+}));
+
+jest.mock('../../src/features/workouts/exerciseSetsApi', () => ({
+  exerciseSetsApi: { util: { resetApiState: jest.fn() } },
+}));
+
+jest.mock('../../src/features/goals/goalsApi', () => ({
+  goalsApi: { util: { resetApiState: jest.fn() } },
 }));
 
 import HomeScreen from '../../app/home';
@@ -108,12 +120,12 @@ describe('HomeScreen', () => {
     expect(getByText(/Next Up: Day 1/)).toBeTruthy();
   });
 
-  it('CTA button shows "Start Day 1" when no active workout', () => {
-    const { getByText } = render(<HomeScreen />);
-    expect(getByText(/Start Day 1/)).toBeTruthy();
+  it('CTA button is accessible with start label when no active workout', () => {
+    const { getByLabelText } = render(<HomeScreen />);
+    expect(getByLabelText(/Start Day 1/)).toBeTruthy();
   });
 
-  it('shows "In Progress" label when active workout exists', () => {
+  it('shows "In Progress" label on card when active workout exists', () => {
     mockUseGetTemplateQuery.mockReturnValue({
       data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
     });
@@ -124,27 +136,35 @@ describe('HomeScreen', () => {
     expect(getByText('In Progress')).toBeTruthy();
   });
 
-  it('CTA button shows "Resume Workout" when active workout exists', () => {
+  it('CTA button shows Resume Workout label when active workout exists', () => {
     mockUseGetTemplateQuery.mockReturnValue({
       data: { ...baseTemplate, has_active_workout: true, active_workout_id: 99 },
     });
     mockUseGetWorkoutsQuery.mockReturnValue({
       data: [{ id: 99, completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
     });
-    const { getByText } = render(<HomeScreen />);
-    expect(getByText('Resume Workout')).toBeTruthy();
+    const { getByLabelText } = render(<HomeScreen />);
+    expect(getByLabelText('Resume Workout')).toBeTruthy();
   });
 
-  it('no programme card shown when no programme selected', () => {
+  it('no CTA shown when no programme selected', () => {
     mockUseGetPreferenceQuery.mockReturnValue({
       data: { ...basePreference, selected_workout_template_id: null, selected_workout_template_name: null },
     });
-    const { queryByText } = render(<HomeScreen />);
-    expect(queryByText(/Start Day/)).toBeNull();
-    expect(queryByText('Resume Workout')).toBeNull();
+    const { queryByLabelText } = render(<HomeScreen />);
+    expect(queryByLabelText(/Start Day/)).toBeNull();
+    expect(queryByLabelText('Resume Workout')).toBeNull();
   });
 
-  it.todo('navigates to /workout-preview with correct dayNumber on CTA press');
+  it('tapping Start CTA navigates to /workout-preview with correct day', () => {
+    mockUseGetWorkoutsQuery.mockReturnValue({ data: [] });
+    const { getByLabelText } = render(<HomeScreen />);
+    fireEvent.press(getByLabelText(/Start Day 1/));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/workout-preview',
+      params: { templateId: '1', dayNumber: '1', dayName: 'Push Day' },
+    });
+  });
 
   it('tapping Resume Workout CTA navigates to /active-workout with the in-progress workout id', () => {
     mockUseGetTemplateQuery.mockReturnValue({
@@ -153,8 +173,8 @@ describe('HomeScreen', () => {
     mockUseGetWorkoutsQuery.mockReturnValue({
       data: [{ id: 99, name: 'Pull Day', completed: false, started_at: null, workout_template_id: 1, workout_exercises: [] }],
     });
-    const { getByText } = render(<HomeScreen />);
-    fireEvent.press(getByText('Resume Workout'));
+    const { getByLabelText } = render(<HomeScreen />);
+    fireEvent.press(getByLabelText('Resume Workout'));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/active-workout',
       params: { workoutId: '99', dayName: 'Pull Day' },
@@ -167,8 +187,36 @@ describe('HomeScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/history');
   });
 
+  it('shows loading state while user data is loading', () => {
+    mockUseGetCurrentUserQuery.mockReturnValue({ data: undefined, isLoading: true });
+    const { getByText } = render(<HomeScreen />);
+    expect(getByText('Loading...')).toBeTruthy();
+  });
+
+  it('shows weekly workout count when workouts completed this week', () => {
+    const thisMonday = new Date();
+    const day = thisMonday.getDay();
+    thisMonday.setDate(thisMonday.getDate() - (day === 0 ? 6 : day - 1));
+    thisMonday.setHours(12, 0, 0, 0);
+    mockUseGetWorkoutsQuery.mockReturnValue({
+      data: [
+        { id: 1, completed: true, workout_template_id: 1, workout_date: thisMonday.toISOString(), workout_exercises: [] },
+        { id: 2, completed: true, workout_template_id: 1, workout_date: thisMonday.toISOString(), workout_exercises: [] },
+      ],
+    });
+    const { getByText } = render(<HomeScreen />);
+    expect(getByText('2 workouts this week')).toBeTruthy();
+  });
+
   it('Log out link is visible at the bottom', () => {
     const { getByText } = render(<HomeScreen />);
     expect(getByText('Log out')).toBeTruthy();
+  });
+
+  it('tapping Log out navigates to /login', async () => {
+    const { getByLabelText } = render(<HomeScreen />);
+    fireEvent.press(getByLabelText('Log out'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockReplace).toHaveBeenCalledWith('/login');
   });
 });

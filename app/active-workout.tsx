@@ -249,6 +249,7 @@ export default function ActiveWorkoutScreen() {
       });
       return seeded;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workout?.id]);
 
   // Redirect if workout is already completed
@@ -298,7 +299,7 @@ export default function ActiveWorkoutScreen() {
       }));
       setReEditedIds((prev) => { const next = new Set(prev); next.delete(set.id); return next; });
       setRestTimer({ duration: findRestDuration(set.id) });
-    } catch (err: any) {
+    } catch (_err) {
       clearTimeout(timeoutId);
       setErrorMap((prev) => ({
         ...prev,

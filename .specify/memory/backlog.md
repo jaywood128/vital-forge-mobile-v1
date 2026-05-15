@@ -9,3 +9,6 @@
 
 - [ ] **feat(templates): add HIIT, cardio and core exercises to workout template library**
   Current templates are weighted/strength focused. Expand the Rails seed data and template library to include HIIT circuits, core strength exercises (planks, hollow holds, dead bugs), and cardio movements (burpees, jump rope, box jumps). Goal is to make the default programmes more balanced and help users raise their heart rate and build core strength, not just lift weights.
+
+- [ ] **feat(settings): Settings screen with user preference toggles**
+  Add a Settings screen accessible from the home screen. Initial toggles: rest timer on/off (disables auto-start after logging a set), rest duration override (custom seconds instead of per-exercise value). Future candidates: notification preferences, units (lbs/kg), dark/light theme. Rails backend may need a `user_settings` table or expansion of `user_preferences` to persist these values.
