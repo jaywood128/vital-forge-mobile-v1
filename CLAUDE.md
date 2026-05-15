@@ -95,6 +95,8 @@ All token files re-exported from `src/theme/index.ts`:
 - JWT in expo-secure-store (authToken key); user data persisted on Rails API backend (001-user-registration)
 - Ruby 3.x / Rails 7.x (backend) · TypeScript 5.9 strict / React Native 0.81 (mobile) + RTK Query, Expo Router 6, expo-secure-store, StyleSheet + src/theme tokens (004-start-workout)
 - PostgreSQL (backend) · No local storage changes (mobile) (004-start-workout)
+- TypeScript 5.9 stric + RTK Query (existing), expo-linear-gradient (existing), expo-router 6 (existing) (007-workout-history)
+- N/A — read-only; no local storage changes (007-workout-history)
 
 ## Recent Changes
 - 001-user-registration: Added TypeScript 5.9 strict, React Native 0.81 + Expo SDK 54, Expo Router 6, Redux Toolkit + RTK Query, expo-secure-store, expo-linear-gradient, `src/components/ui/` primitives (Card, Button, TextField), `src/theme/` tokens

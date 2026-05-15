@@ -8,7 +8,10 @@ import {
   Alert,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useGetWorkoutQuery,
@@ -121,11 +124,14 @@ function SetRow({
         <TouchableOpacity
           onPress={onLog}
           disabled={isLoading || !canLog}
-          style={[styles.logButton, (isLoading || !canLog) && styles.logButtonDisabled]}
+          style={[styles.logButton, canLog && !isLoading && styles.logButtonReady]}
           accessibilityRole="button"
           accessibilityLabel={isLoading ? 'Saving...' : 'Log set'}
         >
-          <Text style={styles.logButtonText}>{isLoading ? '...' : 'Log'}</Text>
+          {isLoading
+            ? <ActivityIndicator size="small" color={colors.pureWhite} />
+            : <Ionicons name="checkmark" size={22} color={canLog ? colors.pureWhite : colors.mediumGray} />
+          }
         </TouchableOpacity>
       </View>
 
@@ -347,7 +353,10 @@ export default function ActiveWorkoutScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <FlatList
         data={workout.workout_exercises}
         keyExtractor={(item) => item.id.toString()}
@@ -396,7 +405,7 @@ export default function ActiveWorkoutScreen() {
           style={styles.finishButton}
         />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -537,15 +546,18 @@ const styles = StyleSheet.create({
     color: colors.mediumGray,
   },
   logButton: {
-    backgroundColor: colors.electricBlue,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: spacing.touchMin,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: colors.warmGray2,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  logButtonDisabled: {
-    backgroundColor: colors.mediumGray,
+  logButtonReady: {
+    backgroundColor: colors.success,
+    borderColor: colors.success,
   },
   inputOptional: {
     borderStyle: 'dashed',
@@ -554,10 +566,6 @@ const styles = StyleSheet.create({
   },
   inputUnitOptional: {
     opacity: 0.5,
-  },
-  logButtonText: {
-    ...typography.button,
-    color: colors.pureWhite,
   },
   inlineError: {
     ...typography.caption,

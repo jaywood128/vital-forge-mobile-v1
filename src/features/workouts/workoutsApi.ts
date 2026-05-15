@@ -107,9 +107,9 @@ export const workoutsApi = createApi({
       },
       invalidatesTags: ['Workouts', 'ActiveWorkout'],
     }),
-    getWorkouts: builder.query<Workout[], void>({
+    getWorkouts: builder.query<WorkoutDetail[], void>({
       query: () => '/api/v1/workouts',
-      transformResponse: (response: { data: Workout[] }) => response.data,
+      transformResponse: (response: { data: WorkoutDetail[] }) => response.data,
       providesTags: ['Workouts'],
     }),
   }),

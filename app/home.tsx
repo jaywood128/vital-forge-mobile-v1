@@ -92,7 +92,7 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <Screen>
+      <Screen variant="light">
         <Text style={styles.loadingText}>Loading...</Text>
       </Screen>
     );
@@ -106,7 +106,7 @@ export default function HomeScreen() {
         accessibilityLabel={hasActiveWorkout ? 'Resume in-progress workout' : `Start workout: ${nextDayName}`}
         style={({ pressed }) => [pressed && styles.cardPressed]}
       >
-        <Card style={[styles.card, styles.programmeCard]}>
+        <Card variant="light" style={[styles.card, styles.programmeCard]}>
           <Text style={styles.programmeLabel}>Active Programme</Text>
           <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
           {hasActiveWorkout ? (
@@ -137,7 +137,7 @@ export default function HomeScreen() {
       </Pressable>
     </>
   ) : preference ? (
-    <Card style={styles.card}>
+    <Card variant="light" style={styles.card}>
       <Text style={styles.prefsTitle}>Your Preferences</Text>
       <View style={styles.prefRow}>
         <Text style={styles.prefLabel}>Goal</Text>
@@ -165,14 +165,21 @@ export default function HomeScreen() {
   ) : null;
 
   return (
-    <Screen>
-      <Card style={styles.card}>
+    <Screen variant="light">
+      <Card variant="light" style={styles.card}>
         <Text style={styles.title}>Welcome{user?.first_name ? `, ${user.first_name}` : ''}!</Text>
         {user && <Text style={styles.subtitle}>{user.email}</Text>}
         <Text style={styles.body}>Ready to work out?</Text>
       </Card>
 
       {activeProgrammeCard}
+
+      <Button
+        title="History"
+        onPress={() => router.push('/history')}
+        variant="secondary"
+        style={styles.historyButton}
+      />
 
       <Button
         title={isLoggingOut ? 'Logging out...' : 'Logout'}
@@ -206,6 +213,9 @@ const styles = StyleSheet.create({
   loadingText: {
     ...typography.body,
     textAlign: 'center',
+  },
+  historyButton: {
+    marginBottom: spacing.md,
   },
   logoutButton: {
     alignSelf: 'center',
