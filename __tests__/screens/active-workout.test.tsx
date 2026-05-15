@@ -172,8 +172,8 @@ describe('ActiveWorkoutScreen', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('Log set'));
     });
-    expect(getByText('100 lbs × 10 reps')).toBeTruthy();
-    expect(getByText('✓')).toBeTruthy();
+    expect(getByText('100 lbs · 10 reps')).toBeTruthy();
+    expect(getByLabelText(/Set.*logged. Tap to edit./)).toBeTruthy();
   });
 
   it('shows inline error on the set row after save failure, values preserved', async () => {
@@ -276,7 +276,7 @@ describe('ActiveWorkoutScreen', () => {
       fireEvent.press(getByLabelText('Log set'));
     });
     expect(getByText('10 reps')).toBeTruthy();
-    expect(getByText('✓')).toBeTruthy();
+    expect(getByLabelText(/Set.*logged. Tap to edit./)).toBeTruthy();
     expect(queryByText(/lbs/)).toBeNull();
   });
 
@@ -289,9 +289,9 @@ describe('ActiveWorkoutScreen', () => {
       })),
     };
     mockUseGetWorkoutQuery.mockReturnValue({ data: resumeWorkout, isLoading: false, isError: false, refetch: jest.fn() });
-    const { getByText } = render(<ActiveWorkoutScreen />);
-    expect(getByText('95 lbs × 8 reps')).toBeTruthy();
-    expect(getByText('✓')).toBeTruthy();
+    const { getByText, getByLabelText } = render(<ActiveWorkoutScreen />);
+    expect(getByText('95 lbs · 8 reps')).toBeTruthy();
+    expect(getByLabelText(/Set.*logged. Tap to edit./)).toBeTruthy();
   });
 
   it('tapping a resumed API-logged set re-enters edit mode', async () => {
@@ -304,7 +304,7 @@ describe('ActiveWorkoutScreen', () => {
     };
     mockUseGetWorkoutQuery.mockReturnValue({ data: resumeWorkout, isLoading: false, isError: false, refetch: jest.fn() });
     const { getByText, getByLabelText } = render(<ActiveWorkoutScreen />);
-    expect(getByText('95 lbs × 8 reps')).toBeTruthy();
+    expect(getByText('95 lbs · 8 reps')).toBeTruthy();
     await act(async () => {
       fireEvent.press(getByLabelText('Set 1 logged. Tap to edit.'));
     });
@@ -320,8 +320,8 @@ describe('ActiveWorkoutScreen', () => {
       })),
     };
     mockUseGetWorkoutQuery.mockReturnValue({ data: resumeBodyweightWorkout, isLoading: false, isError: false, refetch: jest.fn() });
-    const { getByText } = render(<ActiveWorkoutScreen />);
+    const { getByText, getByLabelText } = render(<ActiveWorkoutScreen />);
     expect(getByText('12 reps')).toBeTruthy();
-    expect(getByText('✓')).toBeTruthy();
+    expect(getByLabelText(/Set.*logged. Tap to edit./)).toBeTruthy();
   });
 });

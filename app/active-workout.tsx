@@ -11,6 +11,8 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useGetWorkoutQuery,
@@ -70,15 +72,17 @@ function SetRow({
         accessibilityRole="button"
         accessibilityLabel={`Set ${set.set_number} logged. Tap to edit.`}
       >
-        <Text style={styles.setNumber}>Set {set.set_number}</Text>
-        <Text style={styles.loggedValues}>
-          {isBodyweight
-            ? loggedData.weight
-              ? `+${loggedData.weight} lbs × ${loggedData.reps} reps`
-              : `${loggedData.reps} reps`
-            : `${loggedData.weight} lbs × ${loggedData.reps} reps`}
-        </Text>
-        <Text style={styles.loggedBadge}>✓</Text>
+        <View style={styles.loggedLeft}>
+          <Text style={styles.loggedSetLabel}>SET {set.set_number}</Text>
+          <Text style={styles.loggedValues}>
+            {isBodyweight
+              ? loggedData.weight
+                ? `+${loggedData.weight} lbs · ${loggedData.reps} reps`
+                : `${loggedData.reps} reps`
+              : `${loggedData.weight} lbs · ${loggedData.reps} reps`}
+          </Text>
+        </View>
+        <Ionicons name="checkmark-circle" size={22} color={colors.success} />
       </TouchableOpacity>
     );
   }
@@ -123,7 +127,7 @@ function SetRow({
         <TouchableOpacity
           onPress={onLog}
           disabled={isLoading || !canLog}
-          style={[styles.logButton, canLog && !isLoading && styles.logButtonReady]}
+          style={[styles.logButtonShadow, (!canLog || isLoading) && styles.logButtonDim]}
           accessibilityRole="button"
           accessibilityLabel={isLoading ? 'Saving...' : 'Log set'}
         >
@@ -133,7 +137,10 @@ function SetRow({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.logButtonText}>{isLoading ? '…' : '+'}</Text>
+            {isLoading
+              ? <ActivityIndicator size="small" color={colors.pureWhite} />
+              : <Ionicons name="add" size={26} color={colors.pureWhite} />
+            }
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -211,6 +218,7 @@ function ExerciseSection({
 }
 
 export default function ActiveWorkoutScreen() {
+  const insets = useSafeAreaInsets();
   const { workoutId, dayName } = useLocalSearchParams<{
     workoutId: string;
     dayName?: string;
@@ -299,7 +307,7 @@ export default function ActiveWorkoutScreen() {
       }));
       setReEditedIds((prev) => { const next = new Set(prev); next.delete(set.id); return next; });
       setRestTimer({ duration: findRestDuration(set.id) });
-    } catch (_err) {
+    } catch {
       clearTimeout(timeoutId);
       setErrorMap((prev) => ({
         ...prev,
@@ -391,7 +399,7 @@ export default function ActiveWorkoutScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Exit workout"
               >
-                <Text style={styles.closeButtonText}>←</Text>
+                <Ionicons name="chevron-back" size={26} color="rgba(255,255,255,0.7)" />
               </TouchableOpacity>
             </View>
           </Card>
@@ -409,7 +417,7 @@ export default function ActiveWorkoutScreen() {
             onReEdit={handleReEdit}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: insets.top }]}
       />
 
       {restTimer && (
@@ -486,10 +494,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeButtonText: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.4)',
-  },
   listContent: {
     paddingBottom: spacing.xxl,
   },
@@ -527,17 +531,30 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.08)',
   },
   setRowLogged: {
-    backgroundColor: 'rgba(16,185,129,0.12)',
-    borderRadius: radius.sm,
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderRadius: radius.md,
     borderTopWidth: 0,
     borderLeftWidth: 3,
     borderLeftColor: colors.success,
     paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: spacing.touchMin,
     marginBottom: spacing.sm,
+  },
+  loggedLeft: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  loggedSetLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.success,
+    opacity: 0.7,
+    marginBottom: 2,
   },
   setNumber: {
     ...typography.caption,
@@ -547,14 +564,8 @@ const styles = StyleSheet.create({
   },
   loggedValues: {
     ...typography.body,
-    fontWeight: '600',
-    color: colors.success,
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  loggedBadge: {
-    fontSize: 16,
-    color: colors.success,
+    fontWeight: '700',
+    color: colors.pureWhite,
   },
   inputs: {
     flexDirection: 'row',
@@ -589,42 +600,36 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.25)',
     marginTop: 2,
   },
-  logButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
+  logButtonShadow: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     ...Platform.select({
       ios: {
         shadowColor: colors.electricBlue,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.55,
-        shadowRadius: 7,
+        shadowRadius: 8,
       },
       android: { elevation: 8 },
     }),
   },
+  logButtonDim: {
+    opacity: 0.35,
+  },
   logButtonGradient: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logButtonDisabled: {
-    opacity: 0.4,
+    overflow: 'hidden',
   },
   inputOptional: {
     opacity: 0.5,
   },
   inputUnitOptional: {
     opacity: 0.5,
-  },
-  logButtonText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.pureWhite,
-    lineHeight: 28,
   },
   inlineError: {
     ...typography.caption,
