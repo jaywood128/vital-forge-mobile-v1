@@ -7,7 +7,6 @@ import { exerciseSetsApi } from '../features/workouts/exerciseSetsApi';
 import { templatesApi } from '../features/templates/templatesApi';
 import { goalsApi } from '../features/goals/goalsApi';
 import { userPreferenceApi } from '../features/userPreference/userPreferenceApi';
-import onboardingReducer from './onboardingSlice';
 
 export const store = configureStore({
   reducer: {
