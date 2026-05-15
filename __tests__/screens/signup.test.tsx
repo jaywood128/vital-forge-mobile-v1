@@ -104,10 +104,12 @@ describe('SignupScreen', () => {
       await waitFor(() => {
         expect(mockRouterReplace).toHaveBeenCalledWith('/goal-selection');
       });
+      expect(mockCreatePrefFn).not.toHaveBeenCalled();
     });
 
-    it('skips createUserPreference when onboarding is empty', async () => {
-      const screen = renderSignup(); // all nulls
+    it('does not call createUserPreference during signup', async () => {
+      // Preference creation was moved to the goal-selection screen.
+      const screen = renderSignup();
       await fillAndSubmit(screen);
       await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/goal-selection'));
       expect(mockCreatePrefFn).not.toHaveBeenCalled();

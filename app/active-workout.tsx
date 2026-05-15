@@ -123,7 +123,7 @@ function SetRow({
         <TouchableOpacity
           onPress={onLog}
           disabled={isLoading || !canLog}
-          style={[styles.logButton, (isLoading || !canLog) && styles.logButtonDisabled]}
+          style={[styles.logButton, canLog && !isLoading && styles.logButtonReady]}
           accessibilityRole="button"
           accessibilityLabel={isLoading ? 'Saving...' : 'Log set'}
         >

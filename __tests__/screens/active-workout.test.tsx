@@ -135,7 +135,7 @@ describe('ActiveWorkoutScreen', () => {
   });
 
   it('Log button calls logSet with correct payload', async () => {
-    const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
+    const { getByLabelText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
       fireEvent.press(getByLabelText('Log set'));
@@ -145,7 +145,7 @@ describe('ActiveWorkoutScreen', () => {
 
   it('Log button is disabled while save is in-flight', () => {
     mockLogSetFn.mockReturnValue({ unwrap: () => new Promise(() => {}), abort: jest.fn() });
-    const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
+    const { getByLabelText, UNSAFE_getAllByType } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     act(() => {
       fireEvent.press(getByLabelText('Log set'));
@@ -158,7 +158,7 @@ describe('ActiveWorkoutScreen', () => {
       unwrap: () => Promise.reject(new Error('Network error')),
       abort: jest.fn(),
     });
-    const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
+    const { getByLabelText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
       fireEvent.press(getByLabelText('Log set'));
@@ -191,7 +191,7 @@ describe('ActiveWorkoutScreen', () => {
   });
 
   it('tapping a logged row re-enters edit mode with pre-filled values', async () => {
-    const { getByLabelText, getByText } = render(<ActiveWorkoutScreen />);
+    const { getByLabelText } = render(<ActiveWorkoutScreen />);
     fireEvent.changeText(getByLabelText('Weight for set 1'), '100');
     await act(async () => {
       fireEvent.press(getByLabelText('Log set'));

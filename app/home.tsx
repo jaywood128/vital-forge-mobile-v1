@@ -107,7 +107,7 @@ export default function HomeScreen() {
         accessibilityLabel={hasActiveWorkout ? 'Resume in-progress workout' : `Start workout: ${nextDayName}`}
         style={({ pressed }) => [pressed && styles.cardPressed]}
       >
-        <Card style={[styles.card, styles.programmeCard]}>
+        <Card variant="light" style={[styles.card, styles.programmeCard]}>
           <Text style={styles.programmeLabel}>Active Programme</Text>
           <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
           {hasActiveWorkout ? (
@@ -138,7 +138,7 @@ export default function HomeScreen() {
       </Pressable>
     </>
   ) : preference ? (
-    <Card style={styles.card}>
+    <Card variant="light" style={styles.card}>
       <Text style={styles.prefsTitle}>Your Preferences</Text>
       <View style={styles.prefRow}>
         <Text style={styles.prefLabel}>Goal</Text>
@@ -176,6 +176,13 @@ export default function HomeScreen() {
       {activeProgrammeCard}
 
       <Button
+        title="History"
+        onPress={() => router.push('/history')}
+        variant="secondary"
+        style={styles.historyButton}
+      />
+
+      <Button
         title={isLoggingOut ? 'Logging out...' : 'Logout'}
         onPress={handleLogout}
         disabled={isLoggingOut}
@@ -211,6 +218,9 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.pureWhite,
     textAlign: 'center',
+  },
+  historyButton: {
+    marginBottom: spacing.md,
   },
   logoutButton: {
     alignSelf: 'center',
