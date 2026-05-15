@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Text, StyleSheet, Alert, View, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 import { authApi, useGetCurrentUserQuery, useLogoutMutation } from '../src/features/auth/authApi';
 import { userPreferenceApi, useGetPreferenceQuery } from '../src/features/userPreference/userPreferenceApi';
@@ -16,6 +17,23 @@ const GOAL_LABEL: Record<string, string> = {
   physique: 'Build Muscle',
   strength: 'Get Stronger',
 };
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getISOWeekStart(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  const start = new Date(now);
+  start.setDate(diff);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
 
 export default function HomeScreen() {
   const dispatch = useDispatch();
@@ -37,10 +55,18 @@ export default function HomeScreen() {
       if (preference?.selected_workout_template_id) refetchTemplate();
     }, [preference?.selected_workout_template_id, refetchTemplate, refetchWorkouts])
   );
+
   const completedCount =
     workouts?.filter(
       (w) => w.completed && w.workout_template_id === templateId
     )?.length ?? 0;
+
+  const weekStart = getISOWeekStart();
+  const weeklyCount =
+    workouts?.filter((w) => {
+      if (!w.completed || !w.workout_date) return false;
+      return new Date(w.workout_date) >= weekStart;
+    }).length ?? 0;
 
   const daysPerWeek = template?.days_per_week ?? 1;
   const nextDay = (completedCount % daysPerWeek) + 1;
@@ -50,7 +76,6 @@ export default function HomeScreen() {
   const activeWorkout = workouts?.find((w) => !w.completed);
   const hasActiveWorkout = template?.has_active_workout ?? !!activeWorkout;
 
-
   const handleLogout = async () => {
     try {
       await logout().unwrap();
@@ -58,7 +83,6 @@ export default function HomeScreen() {
     try {
       await SecureStore.deleteItemAsync('authToken');
     } catch {}
-    // Clear all RTK Query caches so a subsequent login doesn't see stale data from this user
     dispatch(authApi.util.resetApiState());
     dispatch(workoutsApi.util.resetApiState());
     dispatch(exerciseSetsApi.util.resetApiState());
@@ -69,26 +93,25 @@ export default function HomeScreen() {
     router.replace('/login');
   };
 
-  const handleCardPress = () => {
-    router.push({
-      pathname: '/workout-preview',
-      params: {
-        templateId: String(templateId),
-        dayNumber: String(nextDay),
-        dayName: nextDayName,
-      },
-    });
-  };
-
-  const handleResumePress = () => {
-    if (!activeWorkout) return;
-    router.push({
-      pathname: '/active-workout',
-      params: {
-        workoutId: String(activeWorkout.id),
-        dayName: activeWorkout.name ?? '',
-      },
-    });
+  const handleCTAPress = () => {
+    if (hasActiveWorkout && activeWorkout) {
+      router.push({
+        pathname: '/active-workout',
+        params: {
+          workoutId: String(activeWorkout.id),
+          dayName: activeWorkout.name ?? '',
+        },
+      });
+    } else {
+      router.push({
+        pathname: '/workout-preview',
+        params: {
+          templateId: String(templateId),
+          dayNumber: String(nextDay),
+          dayName: nextDayName,
+        },
+      });
+    }
   };
 
   if (isLoading) {
@@ -99,136 +122,104 @@ export default function HomeScreen() {
     );
   }
 
-  const activeProgrammeCard = preference?.selected_workout_template_name ? (
-    <>
-      <Pressable
-        onPress={hasActiveWorkout ? handleResumePress : handleCardPress}
-        accessibilityRole="button"
-        accessibilityLabel={hasActiveWorkout ? 'Resume in-progress workout' : `Start workout: ${nextDayName}`}
-        style={({ pressed }) => [pressed && styles.cardPressed]}
-      >
-        <Card variant="light" style={[styles.card, styles.programmeCard]}>
-          <Text style={styles.programmeLabel}>Active Programme</Text>
-          <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
-          {hasActiveWorkout ? (
-            <Text style={styles.resumeLabel}>In Progress — Tap to Resume</Text>
-          ) : (
-            <Text style={styles.nextUpLabel}>
-              Next Up: Day {nextDay} — {nextDayName}
-            </Text>
-          )}
-          <View style={styles.programmeMeta}>
-            {preference.primary_goal && (
-              <View style={styles.programmeChip}>
-                <Text style={styles.programmeChipText}>{GOAL_LABEL[preference.primary_goal] ?? preference.primary_goal}</Text>
-              </View>
-            )}
-            {preference.training_days_per_week && (
-              <View style={styles.programmeChip}>
-                <Text style={styles.programmeChipText}>{preference.training_days_per_week} days/week</Text>
-              </View>
-            )}
-            {preference.experience_level && (
-              <View style={styles.programmeChip}>
-                <Text style={styles.programmeChipText}>{preference.experience_level}</Text>
-              </View>
-            )}
-          </View>
-        </Card>
-      </Pressable>
-    </>
-  ) : preference ? (
-    <Card variant="light" style={styles.card}>
-      <Text style={styles.prefsTitle}>Your Preferences</Text>
-      <View style={styles.prefRow}>
-        <Text style={styles.prefLabel}>Goal</Text>
-        <Text style={styles.prefValue}>
-          {preference.primary_goal ? GOAL_LABEL[preference.primary_goal] ?? preference.primary_goal : '—'}
-        </Text>
-      </View>
-      <View style={styles.prefRow}>
-        <Text style={styles.prefLabel}>Training days</Text>
-        <Text style={styles.prefValue}>
-          {preference.training_days_per_week ? `${preference.training_days_per_week} days/week` : '—'}
-        </Text>
-      </View>
-      <View style={styles.prefRow}>
-        <Text style={styles.prefLabel}>Experience</Text>
-        <Text style={styles.prefValue}>{preference.experience_level ?? '—'}</Text>
-      </View>
-      <View style={[styles.prefRow, styles.prefRowLast]}>
-        <Text style={styles.prefLabel}>Onboarding</Text>
-        <Text style={[styles.prefValue, preference.onboarding_completed ? styles.complete : styles.incomplete]}>
-          {preference.onboarding_completed ? 'Complete' : 'Incomplete'}
-        </Text>
-      </View>
-    </Card>
-  ) : null;
+  const firstName = user?.first_name ?? '';
+  const statLine = weeklyCount > 0
+    ? `${weeklyCount} workout${weeklyCount === 1 ? '' : 's'} this week`
+    : 'No workouts yet this week';
 
   return (
     <Screen variant="dark">
-      <Card style={styles.card}>
-        <Text style={styles.title}>Welcome{user?.first_name ? `, ${user.first_name}` : ''}!</Text>
-        {user && <Text style={styles.subtitle}>{user.email}</Text>}
-        <Text style={styles.body}>Ready to work out?</Text>
-      </Card>
+      <Text style={styles.greeting}>{getGreeting()}{firstName ? `, ${firstName}` : ''}.</Text>
+      <Text style={styles.statLine}>{statLine}</Text>
 
-      {activeProgrammeCard}
+      {preference?.selected_workout_template_name ? (
+        <>
+          <Card
+            variant="dark"
+            borderAccent={colors.electricBlueLight}
+            style={styles.programmeCard}
+          >
+            <Text style={styles.programmeLabel}>Active Programme</Text>
+            <Text style={styles.programmeName}>{preference.selected_workout_template_name}</Text>
+            {hasActiveWorkout ? (
+              <Text style={styles.resumeLabel}>In Progress</Text>
+            ) : (
+              <Text style={styles.nextUpLabel}>
+                Next Up: Day {nextDay} — {nextDayName}
+              </Text>
+            )}
+            <View style={styles.programmeMeta}>
+              {preference.primary_goal && (
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>{GOAL_LABEL[preference.primary_goal] ?? preference.primary_goal}</Text>
+                </View>
+              )}
+              {preference.training_days_per_week && (
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>{preference.training_days_per_week} days/week</Text>
+                </View>
+              )}
+              {preference.experience_level && (
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>{preference.experience_level}</Text>
+                </View>
+              )}
+            </View>
+          </Card>
 
-      <Button
-        title="History"
+          <Button
+            title={hasActiveWorkout ? 'Resume Workout' : `Start Day ${nextDay} — ${nextDayName}`}
+            onPress={handleCTAPress}
+            variant="primary"
+            style={styles.ctaButton}
+          />
+        </>
+      ) : null}
+
+      <Pressable
         onPress={() => router.push('/history')}
-        variant="secondary"
-        style={styles.historyButton}
-      />
+        style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="View workout history"
+      >
+        <Ionicons name="time-outline" size={18} color={colors.electricBlueLight} />
+        <Text style={styles.historyLabel}>Workout History</Text>
+      </Pressable>
 
-      <Button
-        title={isLoggingOut ? 'Logging out...' : 'Logout'}
+      <View style={styles.spacer} />
+
+      <Pressable
         onPress={handleLogout}
         disabled={isLoggingOut}
-        variant="destructive"
-        style={styles.logoutButton}
-      />
+        style={({ pressed }) => [pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Log out"
+      >
+        <Text style={styles.logoutLink}>{isLoggingOut ? 'Logging out…' : 'Log out'}</Text>
+      </Pressable>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    marginBottom: spacing.lg,
-  },
-  cardPressed: {
-    opacity: 0.85,
-  },
-  title: {
-    ...typography.title,
-    color: colors.pureWhite,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    ...typography.subtitle,
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: spacing.md,
-  },
-  body: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.7)',
-  },
   loadingText: {
     ...typography.body,
     color: colors.pureWhite,
     textAlign: 'center',
   },
-  historyButton: {
-    marginBottom: spacing.md,
+  greeting: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.pureWhite,
+    marginBottom: spacing.xs,
   },
-  logoutButton: {
-    alignSelf: 'center',
-    paddingHorizontal: spacing.lg,
+  statLine: {
+    ...typography.caption,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: spacing.lg,
   },
   programmeCard: {
-    borderColor: colors.electricBlueLight,
-    borderWidth: 1,
+    marginBottom: spacing.md,
   },
   programmeLabel: {
     fontSize: 11,
@@ -261,47 +252,43 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.xs,
   },
-  programmeChip: {
+  chip: {
     backgroundColor: 'rgba(74,144,217,0.2)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
   },
-  programmeChipText: {
+  chipText: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.electricBlueLight,
   },
-  prefsTitle: {
-    ...typography.subtitle,
+  ctaButton: {
+    marginBottom: spacing.xl,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  historyLabel: {
+    ...typography.caption,
+    color: colors.electricBlueLight,
     fontWeight: '600',
-    color: colors.pureWhite,
+  },
+  spacer: {
+    flex: 1,
+  },
+  logoutLink: {
+    ...typography.caption,
+    color: 'rgba(255,255,255,0.35)',
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
-  prefRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  prefRowLast: {
-    borderBottomWidth: 0,
-  },
-  prefLabel: {
-    ...typography.caption,
-    color: 'rgba(255,255,255,0.4)',
-  },
-  prefValue: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.pureWhite,
-  },
-  complete: {
-    color: colors.freshGreen,
-  },
-  incomplete: {
-    color: colors.energeticOrange,
+  pressed: {
+    opacity: 0.6,
   },
 });

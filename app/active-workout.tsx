@@ -20,7 +20,7 @@ import {
 } from '../src/features/workouts/workoutsApi';
 import { useLogSetMutation } from '../src/features/workouts/exerciseSetsApi';
 import { colors, spacing, typography, radius } from '../src/theme';
-import { Screen, Card, Button } from '../src/components/ui';
+import { Screen, Card, Button, RestTimer } from '../src/components/ui';
 
 // Screen-level input state keyed by exerciseSetId — survives FlatList virtualisation
 type SetInputState = { weight: string; reps: string };
@@ -235,6 +235,7 @@ export default function ActiveWorkoutScreen() {
   const [loadingSetId, setLoadingSetId] = useState<number | null>(null);
   // Tracks sets the user has chosen to re-edit so API-logged sets (set.completed=true) can exit locked state
   const [reEditedIds, setReEditedIds] = useState<ReadonlySet<number>>(new Set());
+  const [restTimer, setRestTimer] = useState<{ duration: number } | null>(null);
 
   // Seed inputMap with template reps once workout data arrives (weight stays empty per FR-003)
   useEffect(() => {
@@ -264,6 +265,15 @@ export default function ActiveWorkoutScreen() {
     }));
   };
 
+  const findRestDuration = (setId: number): number => {
+    for (const we of workout?.workout_exercises ?? []) {
+      if (we.exercise_sets.some((s) => s.id === setId)) {
+        return we.rest_between_sets ?? 90;
+      }
+    }
+    return 90;
+  };
+
   const handleLog = async (set: ExerciseSet, weight: string, reps: string) => {
     // Clear any previous error
     setErrorMap((prev) => ({ ...prev, [set.id]: '' }));
@@ -287,6 +297,7 @@ export default function ActiveWorkoutScreen() {
         [set.id]: { weight: weight.trim() ? Number(weight) : null, reps: Number(reps) },
       }));
       setReEditedIds((prev) => { const next = new Set(prev); next.delete(set.id); return next; });
+      setRestTimer({ duration: findRestDuration(set.id) });
     } catch (err: any) {
       clearTimeout(timeoutId);
       setErrorMap((prev) => ({
@@ -399,6 +410,14 @@ export default function ActiveWorkoutScreen() {
         )}
         contentContainerStyle={styles.listContent}
       />
+
+      {restTimer && (
+        <RestTimer
+          duration={restTimer.duration}
+          onComplete={() => setRestTimer(null)}
+          onSkip={() => setRestTimer(null)}
+        />
+      )}
 
       {/* Sticky footer */}
       <View style={styles.footer}>
