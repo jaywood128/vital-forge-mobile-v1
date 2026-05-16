@@ -6,7 +6,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { store } from '../src/store/store';
-
 import { useColorScheme } from 'react-native';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
