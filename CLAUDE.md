@@ -97,6 +97,8 @@ All token files re-exported from `src/theme/index.ts`:
 - PostgreSQL (backend) · No local storage changes (mobile) (004-start-workout)
 - TypeScript 5.9 stric + RTK Query (existing), expo-linear-gradient (existing), expo-router 6 (existing) (007-workout-history)
 - N/A — read-only; no local storage changes (007-workout-history)
+- TypeScript 5.9 strict (mobile) / Ruby 3.x + Rails 7.x (backend) + Expo Router 6, RTK Query, expo-secure-store (existing); Action Mailer (Rails, needs SMTP config) (010-password-reset)
+- No new storage. Token lives in `users` table (existing columns). Token is not stored on device. (010-password-reset)
 
 ## Recent Changes
 - 001-user-registration: Added TypeScript 5.9 strict, React Native 0.81 + Expo SDK 54, Expo Router 6, Redux Toolkit + RTK Query, expo-secure-store, expo-linear-gradient, `src/components/ui/` primitives (Card, Button, TextField), `src/theme/` tokens
