@@ -10,14 +10,17 @@ type ButtonProps = {
   disabled?: boolean;
   variant?: ButtonVariant;
   style?: ViewStyle;
+  accessibilityLabel?: string;
 };
 
-export function Button({ title, onPress, disabled, variant = 'primary', style }: ButtonProps) {
+export function Button({ title, onPress, disabled, variant = 'primary', style, accessibilityLabel }: ButtonProps) {
   if (variant === 'primary') {
     return (
       <Pressable
         onPress={onPress}
         disabled={disabled}
+        accessibilityLabel={accessibilityLabel ?? title}
+        accessibilityState={{ disabled: !!disabled }}
         style={({ pressed }) => [
           styles.base,
           { opacity: disabled ? 0.6 : pressed ? 0.85 : 1 },
@@ -54,6 +57,8 @@ export function Button({ title, onPress, disabled, variant = 'primary', style }:
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         styles.base,
         styles.outlined,
