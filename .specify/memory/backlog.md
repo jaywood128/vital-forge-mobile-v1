@@ -5,6 +5,33 @@
 - [ ] **legal(email): add physical mailing address to email footer (CAN-SPAM requirement)**
   Every commercial email must include a physical mailing address by law. Currently a placeholder `[MAILING ADDRESS]` is in `vital-forge-v1/app/views/user_mailer/password_reset.html.erb`. Must be replaced before launch. Do NOT use your home address in a public GitHub repo. Get a virtual mailbox service instead — Anytime Mailbox (~$10-15/month) or iPostal1 (~$10/month) give you a real street address, handle mail scanning, and are widely used by indie developers. Once you have the address, update the email template and remove the placeholder.
 
+## Phase 1 — Lifter Features (HIGHEST PRIORITY)
+
+- [ ] **feat(stats): Personal Records + Exercise Progress Charts** ← NEXT UP
+  Two-part feature giving lifters the complete progressive-overload feedback loop.
+
+  **Part 1: PR Detection (1RM-based)**
+  - After every logged set, compute Epley 1RM: `weight × (1 + reps/30)`
+  - If today's 1RM > all-time best for that exercise → PR
+  - Skip on first-ever logging (no prior history to beat)
+  - Skip bodyweight exercises (weight is null)
+  - Live UX: inline 🏆 badge on set row + slide-down toast ("New PR! Bench 1RM 184 → 187 lbs", 3s) + success haptic
+  - History UX: 🏆 badge persists on any past set row that was a PR at time of logging (recomputed from full history)
+
+  **Part 2: Exercise Progress Charts**
+  - From `workout-detail.tsx`, tap an exercise name → `app/exercise-progress.tsx?exerciseId=N`
+  - Header card: current best weight × reps + estimated 1RM
+  - Segmented control: `[Max Weight | 1RM | Volume]`
+  - One line chart, metric per completed workout date
+  - All client-side from `useGetWorkoutsQuery` data — no backend changes
+
+  **Implementation notes:**
+  - Pure functions in `src/lib/stats/` (prDetection, exerciseHistory) — easy to unit test
+  - New components: `PRBadge`, `PRToast`, `ExerciseChart`
+  - Chart library: `react-native-gifted-charts` (TBD — confirm during planning)
+
+  **Replaces:** existing "PR detection" (Should Have) and "1RM calculator" (Nice to Have) items below — those are now merged into this.
+
 ## MVP Blockers (must ship before launch)
 
 - [ ] **feat(auth): password reset flow** ← IN PROGRESS (branch: 010-password-reset)
@@ -24,19 +51,29 @@
 - [ ] **feat(home): workout streak display**
   Show a streak badge on the home screen. Calculate client-side from `useGetWorkoutsQuery`: consecutive calendar days (or weeks) with at least one completed workout.
 
-- [ ] **feat(active-workout): personal record (PR) detection**
-  After logging a set, compare weight × reps against all previous sets for that exercise. If it's a new max, flash a "New PR 🏆" banner and fire a success haptic.
+- [ ] **feat(home): weekly volume widget**
+  Small banner on home screen: "This week: 12,450 lbs total · +8% vs last week". Total volume = `sum(weight × reps)` across all completed sets in the current calendar week. Pure client-side calculation from `useGetWorkoutsQuery`. Split out from the Personal Records + Exercise Progress Charts feature to keep that scope tight.
+
+## Phase 2 — Expanding to Weight-Tracking Users
+
+These features broaden the app beyond pure strength training to general fitness, body composition, and weight-loss users.
+
+- [ ] **feat(body): body weight log + trend chart**
+  Daily/weekly weigh-ins with a line chart trend. Requires new Rails endpoint and DB table (`body_weights`: user_id, weight, weight_unit, logged_at). Mobile: new screen accessible from home or settings.
+
+- [ ] **feat(body): body measurements**
+  Track chest, waist, hips, arms, thighs over time. Same table pattern as body weight. Per-measurement line chart.
+
+- [ ] **feat(body): progress photos**
+  Front/side/back photos tied to dates. Side-by-side compare two dates. Requires file upload (S3 / Railway storage) and a new endpoint.
 
 ## Nice to Have / Later
 
 - [ ] **feat(ai): post-workout AI feedback**
-  After completing a workout, show an AI-generated summary via OpenAI API (GPT-4o) called from Rails backend. Requires solid workout history dataset first.
+  Backend already exists (`weekly_feedbacks_controller`, `GenerateWeeklyFeedbackJob`, gated by `ENABLE_AI_FEATURES` env var). Mobile screen is missing. Show AI-generated weekly summary on home screen or as a dedicated tab.
 
 - [ ] **feat(settings): Settings screen with user preference toggles**
   Rest timer on/off, rest duration override, units (lbs/kg). Rails backend may need expansion of `user_preferences`.
-
-- [ ] **feat(workout): 1RM calculator**
-  Epley formula from any logged set. Show on exercise history detail view.
 
 ## Infrastructure
 
