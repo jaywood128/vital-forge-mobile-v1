@@ -54,6 +54,17 @@
 - [ ] **feat(home): weekly volume widget**
   Small banner on home screen: "This week: 12,450 lbs total · +8% vs last week". Total volume = `sum(weight × reps)` across all completed sets in the current calendar week. Pure client-side calculation from `useGetWorkoutsQuery`. Split out from the Personal Records + Exercise Progress Charts feature to keep that scope tight.
 
+## Architecture Decision Record
+
+- [ ] **arch: migrate PR detection to server-side when pagination is added**
+  Current PR detection scans the full `WorkoutDetail[]` array client-side using `useMemo`. This works correctly because `GET /api/v1/workouts` returns the complete workout history with no pagination. **This assumption breaks the moment pagination is introduced** — a paginated response only covers recent workouts, so historical PRs from older sessions would be missed.
+
+  **Future design:** Add a `personal_records` table to Rails (`user_id`, `exercise_id`, `best_1rm`, `best_weight`, `achieved_at`). Update it server-side via an `after_create` callback or background job whenever a new set is saved. Mobile fetches PRs from a dedicated `GET /api/v1/mobile/personal_records` endpoint instead of computing client-side. The existing stats functions (`calculateEpley1RM`, `getCurrentBests`) remain useful — only the data source changes.
+
+  **Interview talking point:** "I chose client-side derivation for the MVP because we load full history and the user base is small. I documented the migration path to server-side storage because the decision is load-bearing — it breaks under pagination and becomes a correctness bug, not just a performance issue."
+
+  Revisit when: pagination is added to `GET /api/v1/workouts` OR the app has enough users that full-history loads become slow.
+
 ## Phase 2 — Expanding to Weight-Tracking Users
 
 These features broaden the app beyond pure strength training to general fitness, body composition, and weight-loss users.
