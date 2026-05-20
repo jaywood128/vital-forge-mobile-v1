@@ -24,6 +24,7 @@ export default function ResetPasswordScreen() {
   const [passwordError, setPasswordError] = useState('');
   const [confirmError, setConfirmError] = useState('');
   const [serverError, setServerError] = useState('');
+  const [isTokenError, setIsTokenError] = useState(false);
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function ResetPasswordScreen() {
     setPasswordError('');
     setConfirmError('');
     setServerError('');
+    setIsTokenError(false);
 
     if (password.length < 8) {
       setPasswordError('Password must be at least 8 characters.');
@@ -53,11 +55,8 @@ export default function ResetPasswordScreen() {
       router.replace({ pathname: '/login', params: { resetSuccess: '1' } });
     } catch (err: any) {
       const apiError = err?.data?.error;
-      if (apiError) {
-        setServerError(apiError);
-      } else {
-        setServerError('Something went wrong. Please check your connection and try again.');
-      }
+      setIsTokenError(err?.status === 422);
+      setServerError(apiError ?? 'Something went wrong. Please check your connection and try again.');
     }
   };
 
@@ -115,7 +114,7 @@ export default function ResetPasswordScreen() {
           {serverError ? (
             <View style={styles.serverErrorBox}>
               <Text style={styles.serverErrorText}>{serverError}</Text>
-              {serverError.includes('expired') || serverError.includes('invalid') ? (
+              {isTokenError ? (
                 <Pressable
                   onPress={() => router.replace('/forgot-password')}
                   accessibilityLabel="Request a new link"

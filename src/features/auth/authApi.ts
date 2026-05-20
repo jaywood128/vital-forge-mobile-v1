@@ -24,11 +24,7 @@ type MobileCurrentUserResponse = {
   };
 };
 
-type ForgotPasswordResponse = {
-  message: string;
-};
-
-type ResetPasswordResponse = {
+type PasswordResetMessageResponse = {
   message: string;
 };
 
@@ -74,7 +70,7 @@ export const authApi = createApi({
       }),
       invalidatesTags: ['Auth', 'User'],
     }),
-    forgotPassword: builder.mutation<ForgotPasswordResponse, { email: string }>({
+    forgotPassword: builder.mutation<PasswordResetMessageResponse, { email: string }>({
       query: (body) => ({
         url: '/api/v1/mobile/forgot_password',
         method: 'POST',
@@ -82,7 +78,7 @@ export const authApi = createApi({
       }),
     }),
     resetPassword: builder.mutation<
-      ResetPasswordResponse,
+      PasswordResetMessageResponse,
       { token: string; password: string; password_confirmation: string }
     >({
       query: (body) => ({
