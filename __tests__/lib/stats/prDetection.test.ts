@@ -35,25 +35,30 @@ describe('detectPRSetIds', () => {
     expect(detectPRSetIds([])).toEqual(new Set());
   });
 
-  it('does not mark first-ever set as PR (no prior history to beat)', () => {
+  it('marks the first-ever set as the current personal best', () => {
     const workouts = [makeWorkout(1, '2024-01-01', [{ setId: 10, weight: 135, reps: 8 }])];
-    expect(detectPRSetIds(workouts).has(10)).toBe(false);
+    expect(detectPRSetIds(workouts).has(10)).toBe(true);
   });
 
-  it('marks set as PR when 1RM exceeds all-time best', () => {
+  it('marks only the best set when a later set beats an earlier one', () => {
     const workouts = [
       makeWorkout(1, '2024-01-01', [{ setId: 10, weight: 135, reps: 8 }]),
       makeWorkout(2, '2024-01-08', [{ setId: 20, weight: 145, reps: 8 }]),
     ];
-    expect(detectPRSetIds(workouts).has(20)).toBe(true);
+    const prIds = detectPRSetIds(workouts);
+    expect(prIds.has(20)).toBe(true);
+    expect(prIds.has(10)).toBe(false);
+    expect(prIds.size).toBe(1);
   });
 
-  it('does not mark set as PR when 1RM ties but does not exceed best', () => {
+  it('keeps the earlier set when a later set only ties the best 1RM', () => {
     const workouts = [
       makeWorkout(1, '2024-01-01', [{ setId: 10, weight: 135, reps: 8 }]),
       makeWorkout(2, '2024-01-08', [{ setId: 20, weight: 135, reps: 8 }]),
     ];
-    expect(detectPRSetIds(workouts).has(20)).toBe(false);
+    const prIds = detectPRSetIds(workouts);
+    expect(prIds.has(20)).toBe(false);
+    expect(prIds.size).toBe(1);
   });
 
   it('skips sets where weight is null (bodyweight exercises)', () => {
@@ -72,7 +77,7 @@ describe('detectPRSetIds', () => {
     expect(detectPRSetIds(workouts).has(20)).toBe(false);
   });
 
-  it('detects intra-session PR when two sets in same workout both exceed previous best', () => {
+  it('marks only the single highest set within a session, not every set that beat the prior best', () => {
     const workouts = [
       makeWorkout(1, '2024-01-01', [{ setId: 10, weight: 135, reps: 8 }]),
       makeWorkout(2, '2024-01-08', [
@@ -81,8 +86,10 @@ describe('detectPRSetIds', () => {
       ]),
     ];
     const prIds = detectPRSetIds(workouts);
-    expect(prIds.has(20)).toBe(true);
     expect(prIds.has(21)).toBe(true);
+    expect(prIds.has(20)).toBe(false);
+    expect(prIds.has(10)).toBe(false);
+    expect(prIds.size).toBe(1);
   });
 
   it('tracks PRs independently per exercise', () => {
@@ -103,8 +110,11 @@ describe('detectPRSetIds', () => {
       },
     ];
     const prIds = detectPRSetIds(workouts);
-    expect(prIds.has(20)).toBe(true);
-    expect(prIds.has(21)).toBe(true);
+    expect(prIds.has(20)).toBe(true);  // best for exercise 1
+    expect(prIds.has(21)).toBe(true);  // best for exercise 2
+    expect(prIds.has(10)).toBe(false); // exercise 1 old best, superseded
+    expect(prIds.has(11)).toBe(false); // exercise 2 old best, superseded
+    expect(prIds.size).toBe(2);
   });
 
   it.todo('handles workouts passed in reverse chronological order — should still detect PRs correctly');

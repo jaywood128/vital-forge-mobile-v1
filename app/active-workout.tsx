@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Text,
   StyleSheet,
@@ -16,13 +16,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useGetWorkoutQuery,
+  useGetWorkoutsQuery,
   useCompleteWorkoutMutation,
+  useLogSetMutation,
   type WorkoutExerciseDetail,
   type ExerciseSet,
 } from '../src/features/workouts/workoutsApi';
-import { useLogSetMutation } from '../src/features/workouts/exerciseSetsApi';
+import * as Haptics from 'expo-haptics';
 import { colors, spacing, typography, radius } from '../src/theme';
 import { Screen, Card, Button, RestTimer } from '../src/components/ui';
+import PRBadge from '../src/components/PRBadge';
+import PRToast from '../src/components/PRToast';
+import { detectPRSetIds } from '../src/lib/stats/prDetection';
+import { calculateEpley1RM } from '../src/lib/stats/epley';
+import { getCurrentBests } from '../src/lib/stats/exerciseHistory';
 
 // Screen-level input state keyed by exerciseSetId — survives FlatList virtualisation
 type SetInputState = { weight: string; reps: string };
@@ -35,6 +42,12 @@ type LoggedMap = Record<number, LoggedSetData>;
 // Per-set error messages
 type ErrorMap = Record<number, string>;
 
+type PRToastState = {
+  exerciseName: string;
+  previous1RM: number;
+  current1RM: number;
+} | null;
+
 type SetRowProps = {
   set: ExerciseSet;
   input: SetInputState;
@@ -43,6 +56,7 @@ type SetRowProps = {
   isLoading: boolean;
   error: string | undefined;
   isBodyweight: boolean;
+  isPR: boolean;
   onInputChange: (field: 'weight' | 'reps', value: string) => void;
   onLog: () => void;
   onReEdit: () => void;
@@ -56,6 +70,7 @@ function SetRow({
   isLoading,
   error,
   isBodyweight,
+  isPR,
   onInputChange,
   onLog,
   onReEdit,
@@ -74,13 +89,16 @@ function SetRow({
       >
         <View style={styles.loggedLeft}>
           <Text style={styles.loggedSetLabel}>SET {set.set_number}</Text>
-          <Text style={styles.loggedValues}>
-            {isBodyweight
-              ? loggedData.weight
-                ? `+${loggedData.weight} lbs · ${loggedData.reps} reps`
-                : `${loggedData.reps} reps`
-              : `${loggedData.weight} lbs · ${loggedData.reps} reps`}
-          </Text>
+          <View style={styles.loggedValueRow}>
+            <Text style={styles.loggedValues}>
+              {isBodyweight
+                ? loggedData.weight
+                  ? `+${loggedData.weight} lbs · ${loggedData.reps} reps`
+                  : `${loggedData.reps} reps`
+                : `${loggedData.weight} lbs · ${loggedData.reps} reps`}
+            </Text>
+            {isPR && <PRBadge style={styles.prBadge} />}
+          </View>
         </View>
         <Ionicons name="checkmark-circle" size={22} color={colors.success} />
       </TouchableOpacity>
@@ -157,6 +175,7 @@ type ExerciseSectionProps = {
   errorMap: ErrorMap;
   loadingSetId: number | null;
   reEditedIds: ReadonlySet<number>;
+  prSetIds: ReadonlySet<number>;
   onInputChange: (setId: number, field: 'weight' | 'reps', value: string) => void;
   onLog: (set: ExerciseSet, weight: string, reps: string) => void;
   onReEdit: (setId: number) => void;
@@ -169,6 +188,7 @@ function ExerciseSection({
   errorMap,
   loadingSetId,
   reEditedIds,
+  prSetIds,
   onInputChange,
   onLog,
   onReEdit,
@@ -204,6 +224,7 @@ function ExerciseSection({
             isLoading={loadingSetId === set.id}
             error={errorMap[set.id]}
             isBodyweight={isBodyweight}
+            isPR={prSetIds.has(set.id)}
             onInputChange={(field, value) => onInputChange(set.id, field, value)}
             onLog={() => {
               const inp = inputMap[set.id] ?? { weight: '', reps: String(set.reps ?? '') };
@@ -229,6 +250,7 @@ export default function ActiveWorkoutScreen() {
   const { data: workout, isLoading, isFetching, isError, refetch } = useGetWorkoutQuery(workoutIdNum, {
     skip: !workoutId,
   });
+  const { data: allWorkouts = [] } = useGetWorkoutsQuery();
 
   // Force-refetch on focus so stale cached data (completed: false) never blocks the redirect
   useFocusEffect(useCallback(() => { if (workoutId) refetch(); }, [workoutId, refetch]));
@@ -244,6 +266,10 @@ export default function ActiveWorkoutScreen() {
   // Tracks sets the user has chosen to re-edit so API-logged sets (set.completed=true) can exit locked state
   const [reEditedIds, setReEditedIds] = useState<ReadonlySet<number>>(new Set());
   const [restTimer, setRestTimer] = useState<{ duration: number } | null>(null);
+  const [prToastState, setPrToastState] = useState<PRToastState>(null);
+  // Tracks best 1RM per exercise within the current session for intra-session PR detection
+  const [sessionBests, setSessionBests] = useState<Record<number, number>>({});
+  const prSetIds = useMemo(() => detectPRSetIds(allWorkouts), [allWorkouts]);
 
   // Seed inputMap with template reps once workout data arrives (weight stays empty per FR-003)
   useEffect(() => {
@@ -307,6 +333,25 @@ export default function ActiveWorkoutScreen() {
       }));
       setReEditedIds((prev) => { const next = new Set(prev); next.delete(set.id); return next; });
       setRestTimer({ duration: findRestDuration(set.id) });
+
+      // PR detection — only for weighted sets
+      const we = workout?.workout_exercises.find((w) => w.exercise_sets.some((s) => s.id === set.id));
+      if (we && weight.trim() && Number(reps) > 0) {
+        const exerciseId = we.exercise.id;
+        const new1RM = calculateEpley1RM(Number(weight), Number(reps));
+        if (new1RM > 0) {
+          const { best1RM: historicalBest } = getCurrentBests(allWorkouts, exerciseId);
+          const previousBest = sessionBests[exerciseId] ?? historicalBest;
+          if (previousBest === null) {
+            // No history yet — establish baseline silently, no toast
+            setSessionBests((prev) => ({ ...prev, [exerciseId]: new1RM }));
+          } else if (new1RM > previousBest) {
+            setPrToastState({ exerciseName: we.exercise.name, previous1RM: previousBest, current1RM: new1RM });
+            setSessionBests((prev) => ({ ...prev, [exerciseId]: new1RM }));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        }
+      }
     } catch {
       clearTimeout(timeoutId);
       setErrorMap((prev) => ({
@@ -412,6 +457,7 @@ export default function ActiveWorkoutScreen() {
             errorMap={errorMap}
             loadingSetId={loadingSetId}
             reEditedIds={reEditedIds}
+            prSetIds={prSetIds}
             onInputChange={handleInputChange}
             onLog={handleLog}
             onReEdit={handleReEdit}
@@ -425,6 +471,16 @@ export default function ActiveWorkoutScreen() {
           duration={restTimer.duration}
           onComplete={() => setRestTimer(null)}
           onSkip={() => setRestTimer(null)}
+        />
+      )}
+
+      {prToastState && (
+        <PRToast
+          exerciseName={prToastState.exerciseName}
+          previous1RM={prToastState.previous1RM}
+          current1RM={prToastState.current1RM}
+          onDismiss={() => setPrToastState(null)}
+          bottomOffset={76}
         />
       )}
 
@@ -630,6 +686,14 @@ const styles = StyleSheet.create({
   },
   inputUnitOptional: {
     opacity: 0.5,
+  },
+  loggedValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  prBadge: {
+    marginLeft: spacing.xs,
   },
   inlineError: {
     ...typography.caption,
