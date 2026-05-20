@@ -2,29 +2,10 @@ import { Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, P
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSelector, useDispatch } from 'react-redux';
 import { useSignupMutation } from '../src/features/auth/authApi';
 import * as SecureStore from 'expo-secure-store';
 import { colors, spacing, typography } from '../src/theme';
 import { Button, TextField } from '../src/components/ui';
-
-function validatePhone(phone: string): boolean {
-  const digits = phone.replace(/\D/g, '');
-  return digits.length >= 10 && digits.length <= 15;
-}
-
-function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function validatePhone(phone: string): boolean {
-  const digits = phone.replace(/\D/g, '');
-  return digits.length >= 10 && digits.length <= 15;
-}
-
-function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 function validatePhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, '');
@@ -47,9 +28,6 @@ export default function SignupScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [signup, { isLoading }] = useSignupMutation();
-  const [createUserPreference] = useCreateUserPreferenceMutation();
-  const dispatch = useDispatch();
-  const onboarding = useSelector((state: RootState) => state.onboarding);
   const router = useRouter();
   const confirmPasswordRef = useRef<TextInput>(null);
 
@@ -247,36 +225,6 @@ const styles = StyleSheet.create({
   link: {
     color: colors.electricBlueLight,
     fontWeight: '600',
-  },
-  inputError: {
-    borderColor: colors.brightRed,
-  },
-  phoneError: {
-    ...typography.caption,
-    color: colors.brightRed,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  fieldError: {
-    ...typography.caption,
-    color: colors.brightRed,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  inputError: {
-    borderColor: colors.brightRed,
-  },
-  phoneError: {
-    ...typography.caption,
-    color: colors.brightRed,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  fieldError: {
-    ...typography.caption,
-    color: colors.brightRed,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.sm,
   },
   inputError: {
     borderColor: colors.brightRed,
