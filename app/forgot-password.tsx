@@ -17,20 +17,16 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [forgotPassword] = useForgotPasswordMutation();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const router = useRouter();
 
   const handleSubmit = async () => {
     setError('');
-    setIsSubmitting(true);
     try {
       await forgotPassword({ email }).unwrap();
       setSubmitted(true);
     } catch {
       setError('Something went wrong. Please check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -76,11 +72,11 @@ export default function ForgotPasswordScreen() {
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <Button
-                title={isSubmitting ? 'Sending...' : 'Send Reset Link'}
+                title={isLoading ? 'Sending...' : 'Send Reset Link'}
                 onPress={handleSubmit}
-                disabled={isSubmitting || !email}
+                disabled={isLoading || !email}
                 variant="primary"
-                accessibilityLabel={isSubmitting ? 'Sending...' : 'Send Reset Link'}
+                accessibilityLabel={isLoading ? 'Sending...' : 'Send Reset Link'}
               />
               <Pressable
                 onPress={() => router.push('/login')}

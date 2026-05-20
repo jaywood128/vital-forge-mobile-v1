@@ -10,10 +10,11 @@ jest.mock('expo-router', () => ({
 const mockForgotPasswordFn = jest.fn();
 jest.mock('../../src/features/auth/authApi', () => ({
   authApi: { util: { resetApiState: jest.fn() } },
-  useForgotPasswordMutation: () => [mockForgotPasswordFn, { isLoading: false }],
+  useForgotPasswordMutation: jest.fn(),
 }));
 
 import ForgotPasswordScreen from '../../app/forgot-password';
+import { useForgotPasswordMutation } from '../../src/features/auth/authApi';
 
 describe('ForgotPasswordScreen', () => {
   beforeEach(() => {
@@ -21,6 +22,7 @@ describe('ForgotPasswordScreen', () => {
     mockForgotPasswordFn.mockReturnValue({
       unwrap: () => Promise.resolve({ message: "If that address is registered, a reset link is on its way." }),
     });
+    (useForgotPasswordMutation as jest.Mock).mockReturnValue([mockForgotPasswordFn, { isLoading: false }]);
   });
 
   it('renders email input and Send Reset Link button', () => {
@@ -30,10 +32,9 @@ describe('ForgotPasswordScreen', () => {
   });
 
   it('Send Reset Link button is disabled while mutation is in-flight', () => {
-    mockForgotPasswordFn.mockReturnValue({ unwrap: () => new Promise(() => {}) });
-    const { getByLabelText, getByPlaceholderText } = render(<ForgotPasswordScreen />);
+    (useForgotPasswordMutation as jest.Mock).mockReturnValue([mockForgotPasswordFn, { isLoading: true }]);
+    const { getByPlaceholderText, getByLabelText } = render(<ForgotPasswordScreen />);
     fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
-    act(() => { fireEvent.press(getByLabelText('Send Reset Link')); });
     expect(getByLabelText('Sending...')).toBeTruthy();
   });
 
