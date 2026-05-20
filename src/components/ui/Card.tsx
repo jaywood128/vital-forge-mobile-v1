@@ -5,9 +5,14 @@ type CardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: 'light' | 'dark';
+  borderAccent?: string;
 };
 
-export function Card({ children, style, variant = 'dark' }: CardProps) {
+export function Card({ children, style, variant = 'dark', borderAccent }: CardProps) {
+  const accentStyle: ViewStyle | undefined = borderAccent
+    ? { borderLeftWidth: 3, borderLeftColor: borderAccent }
+    : undefined;
+
   const baseStyle: ViewStyle =
     variant === 'dark'
       ? {
@@ -26,5 +31,5 @@ export function Card({ children, style, variant = 'dark' }: CardProps) {
           ...shadows.card,
         };
 
-  return <View style={[baseStyle, style]}>{children}</View>;
+  return <View style={[baseStyle, accentStyle, style]}>{children}</View>;
 }

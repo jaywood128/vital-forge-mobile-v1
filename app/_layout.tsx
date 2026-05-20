@@ -6,7 +6,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { store } from '../src/store/store';
-
 import { useColorScheme } from 'react-native';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -35,6 +34,8 @@ export default function RootLayout() {
           <Stack.Screen name="active-workout" options={{ headerShown: false }} />
           <Stack.Screen name="history" options={{ headerShown: false }} />
           <Stack.Screen name="workout-detail" options={{ headerShown: false }} />
+          <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+          <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

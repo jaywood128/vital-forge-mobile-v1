@@ -1,6 +1,6 @@
 import { Text, Pressable, StyleSheet, Alert, View } from 'react-native';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLoginMutation } from '../src/features/auth/authApi';
 import * as SecureStore from 'expo-secure-store';
@@ -12,6 +12,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [login, { isLoading }] = useLoginMutation();
   const router = useRouter();
+  const { resetSuccess } = useLocalSearchParams<{ resetSuccess?: string }>();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,6 +38,11 @@ export default function LoginScreen() {
       end={{ x: 0, y: 1 }}
     >
       <View style={styles.content}>
+        {resetSuccess === '1' ? (
+          <View style={styles.successBanner}>
+            <Text style={styles.successText}>Password updated — please log in.</Text>
+          </View>
+        ) : null}
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Sign in to continue</Text>
 
@@ -61,6 +67,14 @@ export default function LoginScreen() {
           disabled={isLoading}
           variant="primary"
         />
+
+        <Pressable
+          onPress={() => router.push('/forgot-password')}
+          style={styles.linkTouch}
+          accessibilityLabel="Forgot your password?"
+        >
+          <Text style={styles.link}>Forgot your password?</Text>
+        </Pressable>
 
         <Pressable onPress={() => router.push('/signup')} style={styles.linkTouch}>
           <Text style={styles.linkText}>
@@ -108,6 +122,18 @@ const styles = StyleSheet.create({
   },
   link: {
     color: colors.electricBlueLight,
+    fontWeight: '600',
+  },
+  successBanner: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  successText: {
+    ...typography.caption,
+    color: colors.success,
+    textAlign: 'center',
     fontWeight: '600',
   },
 });

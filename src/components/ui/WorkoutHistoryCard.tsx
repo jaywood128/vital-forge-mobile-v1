@@ -26,7 +26,7 @@ export function WorkoutHistoryCard({ workout, onPress }: WorkoutHistoryCardProps
       onPress={onPress}
       style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
     >
-      <Card variant="dark" style={styles.card}>
+      <Card variant="dark" style={styles.card} borderAccent={colors.success}>
         <View style={styles.topRow}>
           <Text style={styles.date}>{formattedDate}</Text>
           <Text style={styles.badge}>{exerciseCount} exercises</Text>
