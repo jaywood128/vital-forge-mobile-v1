@@ -60,11 +60,26 @@ export type WorkoutDetail = {
   workout_exercises: WorkoutExerciseDetail[];
 };
 
+export type LogSetPayload = {
+  id: number;
+  weight: number | null;
+  reps: number;
+  completed: true;
+};
+
 export const workoutsApi = createApi({
   reducerPath: 'workoutsApi',
   baseQuery,
   tagTypes: ['Workouts', 'ActiveWorkout'],
   endpoints: (builder) => ({
+    logSet: builder.mutation<{ exercise_set: ExerciseSet }, LogSetPayload>({
+      query: ({ id, ...body }) => ({
+        url: `/api/v1/exercise_sets/${id}`,
+        method: 'PATCH',
+        body: { exercise_set: body },
+      }),
+      invalidatesTags: ['Workouts'],
+    }),
     startWorkout: builder.mutation<{ workout: Workout }, { templateId: number; day_number: number }>({
       query: ({ templateId, day_number }) => ({
         url: `/api/v1/workout_templates/${templateId}/start`,
@@ -116,6 +131,7 @@ export const workoutsApi = createApi({
 });
 
 export const {
+  useLogSetMutation,
   useStartWorkoutMutation,
   useGetWorkoutQuery,
   useCompleteWorkoutMutation,

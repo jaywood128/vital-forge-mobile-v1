@@ -11,13 +11,11 @@ jest.mock('expo-router', () => ({
 
 const mockUseGetWorkoutQuery = jest.fn();
 const mockCompleteWorkoutFn = jest.fn();
+const mockLogSetFn = jest.fn();
 jest.mock('../../src/features/workouts/workoutsApi', () => ({
   useGetWorkoutQuery: () => mockUseGetWorkoutQuery(),
+  useGetWorkoutsQuery: () => ({ data: [] }),
   useCompleteWorkoutMutation: () => [mockCompleteWorkoutFn, { isLoading: false }],
-}));
-
-const mockLogSetFn = jest.fn();
-jest.mock('../../src/features/workouts/exerciseSetsApi', () => ({
   useLogSetMutation: () => [mockLogSetFn],
 }));
 

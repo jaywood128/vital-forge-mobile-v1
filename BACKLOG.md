@@ -103,6 +103,57 @@ One-line text field per exercise card. Backend already has a `notes` column on `
 
 ---
 
+## Pagination + Server-Side Personal Records Table
+
+**Priority:** Low — defer until evidence of need
+**Type:** Architecture / Performance
+**Depends on:** Real user growth, payload size becoming a problem
+
+### Decision made during 011-personal-records-progress
+
+PR detection and exercise progress charts are currently computed **client-side** from the full `GET /api/v1/workouts` payload. This is intentional — the calculation is trivial (0.17ms for 5 years of data / ~16,600 sets) and avoids premature infrastructure.
+
+**Why NOT to add pagination + PR table now:**
+- No evidence of payload size or performance issue at current scale
+- Adding pagination forces server-side PR calculation — they are mutually exclusive with client-side detection
+- A `personal_records` table adds write complexity (must be maintained on every set log, updated retroactively when sets are edited/deleted)
+- Senior engineers would question this as premature optimization without a measured problem
+
+**When TO revisit (trigger conditions):**
+- `GET /api/v1/workouts` response exceeds ~2MB (roughly 500+ completed workouts)
+- App has real users and `getWorkouts` latency becomes measurable on slow connections
+- Pagination is added for any other reason (e.g. home screen history feed)
+
+**Migration path when the time comes:**
+1. Add `personal_records` table on Rails backend: `(user_id, exercise_id, set_id, estimated_1rm, recorded_at)`
+2. Backfill via a migration that runs `detectPRSetIds` logic in SQL
+3. Add `POST /api/v1/personal_records/detect` endpoint (or background job) triggered on set log
+4. Switch `detectPRSetIds` client logic to `GET /api/v1/personal_records?exercise_id=X`
+5. Add `GET /api/v1/workouts?page=N&per=25` with cursor pagination
+6. Add a database index on `exercise_sets(exercise_id, weight, reps, completed)` for the PR query
+
+**ADR reference:** See discussion in session `011-personal-records-progress` — Google AI recommended server-side immediately; decision was to document the path and defer.
+
+---
+
+## Workout Deletion + Personal Records Recalculation
+
+**Priority:** Low — implement when workout deletion is added
+**Type:** Feature / Data Integrity
+**Depends on:** personal_records table (server-side PR branch)
+
+Deleting a workout means it never happened (industry standard: Strava, Garmin, Strong, Hevy all recalculate records on activity deletion). The `personal_records` table uses `on_delete: :restrict` on the `exercise_set` FK — deletion will fail loudly rather than leave stale PRs.
+
+**Correct implementation when workout deletion is built:**
+1. Identify all exercises in the workout being deleted
+2. Delete `personal_records` rows where `set_id` is in the workout's exercise_sets
+3. For each affected exercise, re-run PR detection across remaining completed sets in chronological order
+4. Insert new `personal_records` rows for the new current bests
+
+**Do not use `on_delete: :cascade` or `on_delete: :nullify`** — cascade silently wipes PR history, nullify leaves stale records pointing to deleted data.
+
+---
+
 ## CI/CD Pipeline Quality Gates
 
 **Priority:** Medium
