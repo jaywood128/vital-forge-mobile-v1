@@ -1,13 +1,20 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useGetWorkoutQuery, WorkoutExerciseDetail, ExerciseSet } from '../src/features/workouts/workoutsApi';
+import { useGetWorkoutQuery, useGetPersonalRecordsQuery, WorkoutExerciseDetail, ExerciseSet } from '../src/features/workouts/workoutsApi';
 import { Screen } from '../src/components/ui';
 import { colors, radius, spacing, typography } from '../src/theme';
+import PRBadge from '../src/components/PRBadge';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data: workout, isLoading, isError } = useGetWorkoutQuery(Number(id));
+  const { data: personalRecords = [] } = useGetPersonalRecordsQuery({});
+  const prSetIds = useMemo(
+    () => new Set(personalRecords.map((pr) => pr.exercise_set_id).filter((id): id is number => id !== null)),
+    [personalRecords]
+  );
 
   const formattedDate = (() => {
     if (!workout) return '';
@@ -58,21 +65,50 @@ export default function WorkoutDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {workout.workout_exercises
+          .filter((we) => we.exercise_sets.some((s) => s.completed))
           .slice()
           .sort((a, b) => a.order_position - b.order_position)
           .map((we) => (
-            <ExerciseHistorySection key={we.id} workoutExercise={we} />
+            <ExerciseHistorySection key={we.id} workoutExercise={we} prSetIds={prSetIds} />
           ))}
       </ScrollView>
     </Screen>
   );
 }
 
-function ExerciseHistorySection({ workoutExercise }: { workoutExercise: WorkoutExerciseDetail }) {
+function isBodyweightSet(exerciseType: string | null, weight: number | null): boolean {
+  return exerciseType === 'bodyweight' || weight === null || weight === 0;
+}
+
+function ExerciseHistorySection({
+  workoutExercise,
+  prSetIds,
+}: {
+  workoutExercise: WorkoutExerciseDetail;
+  prSetIds: ReadonlySet<number>;
+}) {
+  const router = useRouter();
+
   return (
     <View style={styles.exerciseSection}>
       <View style={styles.exerciseHeader}>
-        <Text style={styles.exerciseName}>{workoutExercise.exercise.name}</Text>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: '/exercise-progress',
+              params: {
+                exerciseId: String(workoutExercise.exercise.id),
+                exerciseName: workoutExercise.exercise.name,
+              },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={`View progress for ${workoutExercise.exercise.name}`}
+        >
+          <Text style={[styles.exerciseName, styles.exerciseNameTappable]}>
+            {workoutExercise.exercise.name}
+          </Text>
+        </Pressable>
         {workoutExercise.exercise.muscle_group && (
           <View style={styles.chip}>
             <Text style={styles.chipText}>{workoutExercise.exercise.muscle_group}</Text>
@@ -80,24 +116,22 @@ function ExerciseHistorySection({ workoutExercise }: { workoutExercise: WorkoutE
         )}
       </View>
       {workoutExercise.exercise_sets
+        .filter((s) => s.completed)
         .slice()
         .sort((a, b) => a.set_number - b.set_number)
         .map((set) => (
           <SetHistoryRow
             key={set.id}
             set={set}
-            isBodyweight={
-              workoutExercise.exercise.exercise_type === 'bodyweight' ||
-              set.weight === null ||
-              set.weight === 0
-            }
+            isPR={prSetIds.has(set.id)}
+            isBodyweight={isBodyweightSet(workoutExercise.exercise.exercise_type, set.weight)}
           />
         ))}
     </View>
   );
 }
 
-function SetHistoryRow({ set, isBodyweight }: { set: ExerciseSet; isBodyweight: boolean }) {
+function SetHistoryRow({ set, isPR, isBodyweight }: { set: ExerciseSet; isPR: boolean; isBodyweight: boolean }) {
   const label = isBodyweight
     ? `${set.reps ?? 0} reps`
     : `${set.weight ?? 0} × ${set.reps ?? 0}`;
@@ -106,7 +140,7 @@ function SetHistoryRow({ set, isBodyweight }: { set: ExerciseSet; isBodyweight: 
     <View style={styles.setRow}>
       <Text style={styles.setNumber}>Set {set.set_number}</Text>
       <Text style={styles.setLabel}>{label}</Text>
-      <Text style={styles.checkmark}>✓</Text>
+      {isPR ? <PRBadge style={styles.prBadge} /> : <Text style={styles.checkmark}>✓</Text>}
     </View>
   );
 }
@@ -219,5 +253,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.success,
     fontWeight: '700',
+  },
+  exerciseNameTappable: {
+    textDecorationLine: 'underline',
+    textDecorationColor: 'rgba(255,255,255,0.3)',
+  },
+  prBadge: {
+    alignSelf: 'center',
   },
 });
