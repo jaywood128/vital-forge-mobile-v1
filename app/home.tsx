@@ -69,8 +69,10 @@ export default function HomeScreen() {
       return new Date(w.workout_date) >= weekStart;
     }).length ?? 0;
 
-  const daysPerWeek = template?.days_per_week ?? 1;
-  const nextDay = (completedCount % daysPerWeek) + 1;
+  // Use actual seeded day count for rotation — some templates (Arnold Split, PPL) have
+  // days_per_week > their unique training days because the pattern repeats within the week.
+  const actualDayCount = template?.days?.length ?? template?.days_per_week ?? 1;
+  const nextDay = (completedCount % actualDayCount) + 1;
   const nextDayData = template?.days?.find((d) => d.day_number === nextDay);
   const nextDayName = nextDayData?.name ?? `Day ${nextDay}`;
 

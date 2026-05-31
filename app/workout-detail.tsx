@@ -1,18 +1,20 @@
 import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useGetWorkoutQuery, useGetWorkoutsQuery, WorkoutExerciseDetail, ExerciseSet } from '../src/features/workouts/workoutsApi';
+import { useGetWorkoutQuery, useGetPersonalRecordsQuery, WorkoutExerciseDetail, ExerciseSet } from '../src/features/workouts/workoutsApi';
 import { Screen } from '../src/components/ui';
 import { colors, radius, spacing, typography } from '../src/theme';
 import PRBadge from '../src/components/PRBadge';
-import { detectPRSetIds } from '../src/lib/stats/prDetection';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data: workout, isLoading, isError } = useGetWorkoutQuery(Number(id));
-  const { data: allWorkouts = [] } = useGetWorkoutsQuery();
-  const prSetIds = useMemo(() => detectPRSetIds(allWorkouts), [allWorkouts]);
+  const { data: personalRecords = [] } = useGetPersonalRecordsQuery({});
+  const prSetIds = useMemo(
+    () => new Set(personalRecords.map((pr) => pr.exercise_set_id).filter((id): id is number => id !== null)),
+    [personalRecords]
+  );
 
   const formattedDate = (() => {
     if (!workout) return '';
@@ -73,6 +75,10 @@ export default function WorkoutDetailScreen() {
   );
 }
 
+function isBodyweightSet(exerciseType: string | null, weight: number | null): boolean {
+  return exerciseType === 'bodyweight' || weight === null || weight === 0;
+}
+
 function ExerciseHistorySection({
   workoutExercise,
   prSetIds,
@@ -109,6 +115,7 @@ function ExerciseHistorySection({
         )}
       </View>
       {workoutExercise.exercise_sets
+        .filter((s) => s.completed)
         .slice()
         .sort((a, b) => a.set_number - b.set_number)
         .map((set) => (
@@ -116,11 +123,7 @@ function ExerciseHistorySection({
             key={set.id}
             set={set}
             isPR={prSetIds.has(set.id)}
-            isBodyweight={
-              workoutExercise.exercise.exercise_type === 'bodyweight' ||
-              set.weight === null ||
-              set.weight === 0
-            }
+            isBodyweight={isBodyweightSet(workoutExercise.exercise.exercise_type, set.weight)}
           />
         ))}
     </View>

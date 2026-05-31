@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useGetWorkoutsQuery } from '../src/features/workouts/workoutsApi';
+import { useGetWorkoutsQuery, useGetPersonalRecordsQuery } from '../src/features/workouts/workoutsApi';
 import { Screen } from '../src/components/ui';
 import ExerciseChart from '../src/components/ExerciseChart';
 import { colors, radius, spacing, typography } from '../src/theme';
-import { getCurrentBests, getExerciseSeries } from '../src/lib/stats/exerciseHistory';
+import { getExerciseSeries } from '../src/lib/stats/exerciseHistory';
 
 type Metric = 'maxWeight' | '1rm' | 'volume';
 
@@ -24,6 +24,7 @@ export default function ExerciseProgressScreen() {
   const [activeMetric, setActiveMetric] = useState<Metric>('maxWeight');
 
   const { data: allWorkouts = [] } = useGetWorkoutsQuery();
+  const { data: personalRecords = [] } = useGetPersonalRecordsQuery({});
   const id = Number(exerciseId);
 
   const series = useMemo(
@@ -31,7 +32,11 @@ export default function ExerciseProgressScreen() {
     [allWorkouts, id, activeMetric]
   );
 
-  const { best1RM } = useMemo(() => getCurrentBests(allWorkouts, id), [allWorkouts, id]);
+  const best1RM = useMemo(() => {
+    const prs = personalRecords.filter((pr) => pr.exercise_id === id);
+    if (prs.length === 0) return null;
+    return Math.max(...prs.map((pr) => pr.estimated_1rm));
+  }, [personalRecords, id]);
 
   const activeMetricMeta = METRICS.find((m) => m.key === activeMetric)!;
 

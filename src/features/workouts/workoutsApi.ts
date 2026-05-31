@@ -125,25 +125,19 @@ export const workoutsApi = createApi({
         method: 'PATCH',
       }),
       async onQueryStarted(workoutId, { dispatch, queryFulfilled }) {
-        // Optimistically mark completed in both caches so UI updates before the refetch resolves:
-        // - workouts list: home card flips to "Next Up" immediately
-        // - workout detail: redirect effect fires before the screen becomes interactive
+        // Optimistically mark completed in the list cache so the home card flips immediately.
+        // Do NOT optimistically update the workout detail cache — doing so triggers the
+        // completed useEffect before doComplete can show the PR summary modal.
         const patchList = dispatch(
           workoutsApi.util.updateQueryData('getWorkouts', undefined, (draft) => {
             const w = draft.find((w) => w.id === workoutId);
             if (w) w.completed = true;
           })
         );
-        const patchDetail = dispatch(
-          workoutsApi.util.updateQueryData('getWorkout', workoutId, (draft) => {
-            draft.completed = true;
-          })
-        );
         try {
           await queryFulfilled;
         } catch {
           patchList.undo();
-          patchDetail.undo();
         }
       },
       invalidatesTags: ['Workouts', 'ActiveWorkout', 'PersonalRecords'],
