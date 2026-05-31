@@ -173,6 +173,104 @@ Research and document what should be added to the GitHub Actions pipeline for PR
 
 ---
 
+## Personal Records — Background Job for PR Persistence
+
+**Priority:** Medium — scale concern, not an immediate bug
+**Type:** Performance / Architecture
+**Depends on:** Sidekiq already configured
+
+### Problem
+`persist_prs` runs synchronously inside the `PATCH /api/v1/workouts/:id/complete` request. For a 10-exercise workout this is ~10 DB writes blocking the HTTP response. At low traffic this is unnoticeable, but under load it adds latency to every workout completion.
+
+### Solution
+Move `persist_prs` to a Sidekiq background job (`PersonalRecordPersistJob`). The `complete` action completes the workout and enqueues the job, returning immediately. The job runs async and the mobile fetches updated PRs on the next `GET /api/v1/personal_records` call.
+
+**Tradeoff:** The post-workout PR summary modal currently relies on `new_personal_records` in the completion response. Async processing means the modal can't show immediately — you'd need a polling or push notification approach, or defer the modal to a separate screen loaded after a short delay.
+
+---
+
+## Personal Records — Uniqueness Constraint
+
+**Priority:** Low — edge case, not a live bug
+**Type:** Data Integrity
+
+### Problem
+No database-level uniqueness constraint prevents duplicate `PersonalRecord` rows for the same `(user_id, exercise_id, exercise_set_id)`. Two concurrent requests completing the same workout would each run `persist_prs` and write duplicate rows.
+
+### Solution
+Add a unique index:
+```ruby
+add_index :personal_records, [:user_id, :exercise_id, :exercise_set_id], unique: true
+```
+And handle `ActiveRecord::RecordNotUnique` in `persist_prs` (rescue or use `insert_or_ignore`).
+
+---
+
+## Personal Records — Paginate GET /api/v1/personal_records
+
+**Priority:** Low — defer until payload size becomes measurable
+**Type:** Performance
+
+### Problem
+`GET /api/v1/personal_records` returns all records for the user in a single response. PRs accumulate slowly (only written when you beat your best) so this list stays small for years of typical use. However as a principle, unbounded collection endpoints should be paginated before they become a problem.
+
+### Solution
+Add cursor pagination: `GET /api/v1/personal_records?after_id=123&limit=50`. The mobile client already handles the full list — update `useGetPersonalRecordsQuery` to paginate and merge results.
+
+**Note:** See existing BACKLOG entry on pagination + server-side PRs for the broader context.
+
+---
+
+## Refactor — Extract persist_prs to Service Object
+
+**Priority:** Medium — code quality, not a bug
+**Type:** Refactor
+**Branch:** create `refactor/pr-persister-service`
+
+### Problem
+`persist_prs` is 40 lines of business logic inside `WorkoutsController`. This makes it harder to unit test in isolation (requires a full controller context) and harder to reuse if PR detection is ever triggered from a background job or rake task.
+
+### Task
+1. Create `app/services/personal_record_persister.rb`:
+   ```ruby
+   class PersonalRecordPersister
+     include Epley1Rm
+
+     def initialize(workout)
+       @workout = workout
+     end
+
+     def call
+       # move persist_prs body here, return new_prs array
+     end
+   end
+   ```
+2. Replace `persist_prs(workout)` in the controller with `PersonalRecordPersister.new(workout).call`
+3. Write unit specs for `PersonalRecordPersister` directly (no controller overhead)
+4. Delete the private `persist_prs` method from the controller
+
+---
+
+## Refactor — Consolidate 1RM Calculation
+
+**Priority:** Low — consistency risk, not a live bug
+**Type:** Refactor
+
+### Problem
+The Epley 1RM formula exists in two places:
+- `lib/epley1_rm.rb` — used by `persist_prs` (backend) and `pr_info` in `exercise_sets_controller`
+- `src/lib/stats/exerciseHistory.ts` — used by `getExerciseSeries` (frontend chart)
+- `app/active-workout.tsx` — `derivedPrSetIds` has the formula inlined
+
+The backend is consistent (one module). The frontend has two copies — `exerciseHistory.ts` and `active-workout.tsx` both implement `weight * (1 + reps / 30)` independently.
+
+### Task
+1. Export `epley1RM` from `src/lib/stats/exerciseHistory.ts`
+2. Import and use it in `active-workout.tsx` `derivedPrSetIds` instead of the inline formula
+3. Ensures a formula change only needs to happen in one place on the frontend
+
+---
+
 ## App Distribution — Personal Device & App Store
 
 **Priority:** High (personal device), Low (App Store)
