@@ -4,10 +4,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { useGetTemplatesQuery, useGetTemplateQuery, type WorkoutTemplate, type TemplateExercise } from '../src/features/templates/templatesApi';
-import { useUpdatePreferenceMutation } from '../src/features/userPreference/userPreferenceApi';
+import { useUpdatePreferenceMutation, type PrimaryGoal } from '../src/features/userPreference/userPreferenceApi';
 import { colors, spacing, typography, radius } from '../src/theme';
 
-const GOAL_LABEL: Record<string, string> = {
+const GOAL_LABEL: Record<PrimaryGoal, string> = {
   physique: 'Build Muscle',
   strength: 'Get Stronger',
 };
@@ -140,7 +140,7 @@ export default function TemplatePreviewScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + spacing.xl }]}>
         <Text style={styles.title}>Your programmes</Text>
         <Text style={styles.subtitle}>
-          Based on your goal ({GOAL_LABEL[goal] ?? goal}), {days} days/week, {level} level.
+          Based on your goal ({GOAL_LABEL[goal as PrimaryGoal] ?? goal}), {days} days/week, {level} level.
         </Text>
 
         {isLoading && (

@@ -46,3 +46,6 @@ export const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryE
 
   return rawBaseQuery(request, api, extraOptions);
 };
+
+export type ApiResponse<T> = { data: T };
+
