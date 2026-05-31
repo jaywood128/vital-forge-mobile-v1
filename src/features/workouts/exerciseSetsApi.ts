@@ -1,26 +1,10 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../../lib/api/baseQuery';
-import type { ExerciseSet } from './workoutsApi';
 
-export type LogSetPayload = {
-  id: number;
-  weight: number | null;
-  reps: number;
-  completed: true;
-};
-
+// logSet has moved to workoutsApi (same slice as getWorkouts so invalidatesTags works cross-query).
+// This slice is kept registered in the store so resetApiState() in home.tsx clears it on logout.
 export const exerciseSetsApi = createApi({
   reducerPath: 'exerciseSetsApi',
   baseQuery,
-  endpoints: (builder) => ({
-    logSet: builder.mutation<{ exercise_set: ExerciseSet }, LogSetPayload>({
-      query: ({ id, ...body }) => ({
-        url: `/api/v1/exercise_sets/${id}`,
-        method: 'PATCH',
-        body: { exercise_set: body },
-      }),
-    }),
-  }),
+  endpoints: () => ({}),
 });
-
-export const { useLogSetMutation } = exerciseSetsApi;

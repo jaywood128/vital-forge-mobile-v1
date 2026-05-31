@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from '../../lib/api/baseQuery';
+import { baseQuery, ApiResponse } from '../../lib/api/baseQuery';
 
 export type FitnessGoal = 'build_muscle' | 'lose_fat' | 'get_stronger' | 'general_fitness';
 
@@ -7,9 +7,6 @@ type GoalData = {
   fitness_goal: FitnessGoal | null;
 };
 
-type GoalResponse = {
-  data: GoalData;
-};
 
 export const goalsApi = createApi({
   reducerPath: 'goalsApi',
@@ -22,12 +19,12 @@ export const goalsApi = createApi({
         method: 'POST',
         body: { goal: body },
       }),
-      transformResponse: (response: GoalResponse) => response.data,
+      transformResponse: (response: ApiResponse<GoalData>) => response.data,
       invalidatesTags: ['Goal'],
     }),
     getGoal: builder.query<GoalData, void>({
       query: () => '/api/v1/mobile/goal',
-      transformResponse: (response: GoalResponse) => response.data,
+      transformResponse: (response: ApiResponse<GoalData>) => response.data,
       providesTags: ['Goal'],
     }),
   }),

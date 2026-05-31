@@ -11,13 +11,12 @@ jest.mock('expo-router', () => ({
 
 const mockUseGetWorkoutQuery = jest.fn();
 const mockCompleteWorkoutFn = jest.fn();
+const mockLogSetFn = jest.fn();
 jest.mock('../../src/features/workouts/workoutsApi', () => ({
   useGetWorkoutQuery: () => mockUseGetWorkoutQuery(),
+  useGetWorkoutsQuery: () => ({ data: [] }),
+  useGetPersonalRecordsQuery: () => ({ data: [] }),
   useCompleteWorkoutMutation: () => [mockCompleteWorkoutFn, { isLoading: false }],
-}));
-
-const mockLogSetFn = jest.fn();
-jest.mock('../../src/features/workouts/exerciseSetsApi', () => ({
   useLogSetMutation: () => [mockLogSetFn],
 }));
 
@@ -93,10 +92,13 @@ describe('ActiveWorkoutScreen', () => {
       refetch: jest.fn(),
     });
     mockCompleteWorkoutFn.mockReturnValue({
-      unwrap: () => Promise.resolve({ workout: { ...baseWorkout, completed: true } }),
+      unwrap: () => Promise.resolve({ workout: { ...baseWorkout, completed: true }, new_personal_records: [] }),
     });
     mockLogSetFn.mockReturnValue({
-      unwrap: () => Promise.resolve({ exercise_set: { ...baseSet, completed: true, weight: 100, reps: 10 } }),
+      unwrap: () => Promise.resolve({
+        exercise_set: { ...baseSet, completed: true, weight: 100, reps: 10 },
+        personal_record: { is_new_pr: false, new_estimated_1rm: null, previous_estimated_1rm: null },
+      }),
       abort: jest.fn(),
     });
   });
