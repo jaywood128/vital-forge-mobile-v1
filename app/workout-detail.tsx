@@ -65,6 +65,7 @@ export default function WorkoutDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {workout.workout_exercises
+          .filter((we) => we.exercise_sets.some((s) => s.completed))
           .slice()
           .sort((a, b) => a.order_position - b.order_position)
           .map((we) => (
