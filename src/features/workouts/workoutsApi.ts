@@ -67,12 +67,38 @@ export type LogSetPayload = {
   completed: true;
 };
 
+export type LogSetResponse = {
+  exercise_set: ExerciseSet;
+  personal_record: {
+    is_new_pr: boolean;
+    new_estimated_1rm: number | null;
+    previous_estimated_1rm: number | null;
+  };
+};
+
+export type PersonalRecord = {
+  exercise_id: number;
+  exercise_set_id: number | null;
+  estimated_1rm: number;
+  weight: number;
+  reps: number;
+  recorded_at: string;
+};
+
+export type NewPersonalRecord = {
+  exercise_name: string;
+  weight: number;
+  reps: number;
+  estimated_1rm: number;
+  previous_best: number | null;
+};
+
 export const workoutsApi = createApi({
   reducerPath: 'workoutsApi',
   baseQuery,
-  tagTypes: ['Workouts', 'ActiveWorkout'],
+  tagTypes: ['Workouts', 'ActiveWorkout', 'PersonalRecords'],
   endpoints: (builder) => ({
-    logSet: builder.mutation<{ exercise_set: ExerciseSet }, LogSetPayload>({
+    logSet: builder.mutation<LogSetResponse, LogSetPayload>({
       query: ({ id, ...body }) => ({
         url: `/api/v1/exercise_sets/${id}`,
         method: 'PATCH',
@@ -93,7 +119,7 @@ export const workoutsApi = createApi({
       transformResponse: (response: { data: WorkoutDetail }) => response.data,
       providesTags: (_result, _err, id) => [{ type: 'ActiveWorkout', id }],
     }),
-    completeWorkout: builder.mutation<{ workout: Workout }, number>({
+    completeWorkout: builder.mutation<{ workout: Workout; new_personal_records: NewPersonalRecord[] }, number>({
       query: (workoutId) => ({
         url: `/api/v1/workouts/${workoutId}/complete`,
         method: 'PATCH',
@@ -120,12 +146,19 @@ export const workoutsApi = createApi({
           patchDetail.undo();
         }
       },
-      invalidatesTags: ['Workouts', 'ActiveWorkout'],
+      invalidatesTags: ['Workouts', 'ActiveWorkout', 'PersonalRecords'],
     }),
     getWorkouts: builder.query<WorkoutDetail[], void>({
       query: () => '/api/v1/workouts',
       transformResponse: (response: { data: WorkoutDetail[] }) => response.data,
       providesTags: ['Workouts'],
+    }),
+    getPersonalRecords: builder.query<PersonalRecord[], { exercise_id?: number }>({
+      query: (params) => {
+        const base = '/api/v1/personal_records';
+        return params.exercise_id ? `${base}?exercise_id=${params.exercise_id}` : base;
+      },
+      providesTags: ['PersonalRecords'],
     }),
   }),
 });
@@ -136,4 +169,5 @@ export const {
   useGetWorkoutQuery,
   useCompleteWorkoutMutation,
   useGetWorkoutsQuery,
+  useGetPersonalRecordsQuery,
 } = workoutsApi;
