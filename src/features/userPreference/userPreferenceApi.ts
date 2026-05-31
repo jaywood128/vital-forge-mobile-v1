@@ -4,7 +4,7 @@ import { baseQuery } from '../../lib/api/baseQuery';
 export type PrimaryGoal = 'physique' | 'strength';
 export type ExperienceLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
-const PRIMARY_GOALS = ['physique', 'strength'] as const;
+const PRIMARY_GOALS = ['physique', 'strength', 'cardiovascular'] as const;
 export function isPrimaryGoal(value: string): value is PrimaryGoal {
   return (PRIMARY_GOALS as readonly string[]).includes(value);
 }

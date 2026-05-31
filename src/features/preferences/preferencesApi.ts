@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from '../../lib/api/baseQuery';
+import { baseQuery, ApiResponse } from '../../lib/api/baseQuery';
 import type { GoalType, DifficultyLevel } from '../../store/onboardingSlice';
 
 export type UserPreference = {
@@ -22,9 +22,6 @@ type CreatePreferenceBody = {
   preferred_workout_duration?: number;
 };
 
-type UserPreferenceResponse = {
-  data: UserPreference;
-};
 
 export const preferencesApi = createApi({
   reducerPath: 'preferencesApi',
@@ -37,12 +34,12 @@ export const preferencesApi = createApi({
         method: 'POST',
         body: { user_preference: body },
       }),
-      transformResponse: (response: UserPreferenceResponse) => response.data,
+      transformResponse: (response: ApiResponse<UserPreference>) => response.data,
       invalidatesTags: ['UserPreference'],
     }),
     getUserPreference: builder.query<UserPreference, void>({
       query: () => '/api/v1/user_preference',
-      transformResponse: (response: UserPreferenceResponse) => response.data,
+      transformResponse: (response: ApiResponse<UserPreference>) => response.data,
       providesTags: ['UserPreference'],
     }),
     updateUserPreference: builder.mutation<UserPreference, Partial<CreatePreferenceBody>>({
@@ -51,7 +48,7 @@ export const preferencesApi = createApi({
         method: 'PATCH',
         body: { user_preference: body },
       }),
-      transformResponse: (response: UserPreferenceResponse) => response.data,
+      transformResponse: (response: ApiResponse<UserPreference>) => response.data,
       invalidatesTags: ['UserPreference'],
     }),
   }),

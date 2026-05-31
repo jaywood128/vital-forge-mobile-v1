@@ -99,6 +99,8 @@ All token files re-exported from `src/theme/index.ts`:
 - N/A — read-only; no local storage changes (007-workout-history)
 - TypeScript 5.9 strict (mobile) / Ruby 3.x + Rails 7.x (backend) + Expo Router 6, RTK Query, expo-secure-store (existing); Action Mailer (Rails, needs SMTP config) (010-password-reset)
 - No new storage. Token lives in `users` table (existing columns). Token is not stored on device. (010-password-reset)
+- TypeScript 5.9 stric + React Native 0.81, Expo SDK 54, Redux Toolkit + RTK Query, react-native-reanimated ~4.1.1, expo-haptics ~15.0.8 (011-personal-records-progress)
+- No new storage — all derived from existing `useGetWorkoutsQuery()` cache (011-personal-records-progress)
 
 ## Recent Changes
 - 001-user-registration: Added TypeScript 5.9 strict, React Native 0.81 + Expo SDK 54, Expo Router 6, Redux Toolkit + RTK Query, expo-secure-store, expo-linear-gradient, `src/components/ui/` primitives (Card, Button, TextField), `src/theme/` tokens

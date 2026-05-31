@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from '../../lib/api/baseQuery';
+import { baseQuery, ApiResponse } from '../../lib/api/baseQuery';
 import { type PrimaryGoal, type ExperienceLevel } from '../userPreference/userPreferenceApi';
 
 export type WorkoutTemplate = {
@@ -46,9 +46,6 @@ export type WorkoutTemplateDetail = WorkoutTemplate & {
   days: WorkoutTemplateDay[];
 };
 
-type TemplatesResponse = { data: WorkoutTemplate[] };
-type TemplateDetailResponse = { data: WorkoutTemplateDetail };
-
 export const templatesApi = createApi({
   reducerPath: 'templatesApi',
   baseQuery,
@@ -56,12 +53,12 @@ export const templatesApi = createApi({
   endpoints: (builder) => ({
     getTemplates: builder.query<WorkoutTemplate[], void>({
       query: () => '/api/v1/workout_templates',
-      transformResponse: (response: TemplatesResponse) => response.data,
+      transformResponse: (response: ApiResponse<WorkoutTemplate[]>) => response.data,
       providesTags: ['Templates'],
     }),
     getTemplate: builder.query<WorkoutTemplateDetail, number>({
       query: (id) => `/api/v1/workout_templates/${id}`,
-      transformResponse: (response: TemplateDetailResponse) => response.data,
+      transformResponse: (response: ApiResponse<WorkoutTemplateDetail>) => response.data,
       providesTags: ['Templates'],
     }),
   }),

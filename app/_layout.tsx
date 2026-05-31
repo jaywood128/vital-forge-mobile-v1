@@ -36,6 +36,7 @@ export default function RootLayout() {
           <Stack.Screen name="workout-detail" options={{ headerShown: false }} />
           <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
           <Stack.Screen name="reset-password" options={{ headerShown: false }} />
+          <Stack.Screen name="exercise-progress" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

@@ -10,6 +10,7 @@ jest.mock('expo-router', () => ({
 const mockUseGetWorkoutQuery = jest.fn();
 jest.mock('../../src/features/workouts/workoutsApi', () => ({
   useGetWorkoutQuery: () => mockUseGetWorkoutQuery(),
+  useGetPersonalRecordsQuery: () => ({ data: [] }),
 }));
 
 import WorkoutDetailScreen from '../../app/workout-detail';

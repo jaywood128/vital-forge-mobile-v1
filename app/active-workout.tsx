@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Text,
   StyleSheet,
@@ -16,13 +16,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useGetWorkoutQuery,
+  useGetPersonalRecordsQuery,
   useCompleteWorkoutMutation,
+  useLogSetMutation,
   type WorkoutExerciseDetail,
   type ExerciseSet,
+  type NewPersonalRecord,
 } from '../src/features/workouts/workoutsApi';
-import { useLogSetMutation } from '../src/features/workouts/exerciseSetsApi';
+import * as Haptics from 'expo-haptics';
 import { colors, spacing, typography, radius } from '../src/theme';
 import { Screen, Card, Button, RestTimer } from '../src/components/ui';
+import PRBadge from '../src/components/PRBadge';
+import PRToast from '../src/components/PRToast';
+import PRSummaryModal from '../src/components/PRSummaryModal';
 
 // Screen-level input state keyed by exerciseSetId — survives FlatList virtualisation
 type SetInputState = { weight: string; reps: string };
@@ -35,6 +41,12 @@ type LoggedMap = Record<number, LoggedSetData>;
 // Per-set error messages
 type ErrorMap = Record<number, string>;
 
+type PRToastState = {
+  exerciseName: string;
+  previous1RM: number;
+  current1RM: number;
+} | null;
+
 type SetRowProps = {
   set: ExerciseSet;
   input: SetInputState;
@@ -43,6 +55,7 @@ type SetRowProps = {
   isLoading: boolean;
   error: string | undefined;
   isBodyweight: boolean;
+  isPR: boolean;
   onInputChange: (field: 'weight' | 'reps', value: string) => void;
   onLog: () => void;
   onReEdit: () => void;
@@ -56,6 +69,7 @@ function SetRow({
   isLoading,
   error,
   isBodyweight,
+  isPR,
   onInputChange,
   onLog,
   onReEdit,
@@ -74,13 +88,16 @@ function SetRow({
       >
         <View style={styles.loggedLeft}>
           <Text style={styles.loggedSetLabel}>SET {set.set_number}</Text>
-          <Text style={styles.loggedValues}>
-            {isBodyweight
-              ? loggedData.weight
-                ? `+${loggedData.weight} lbs · ${loggedData.reps} reps`
-                : `${loggedData.reps} reps`
-              : `${loggedData.weight} lbs · ${loggedData.reps} reps`}
-          </Text>
+          <View style={styles.loggedValueRow}>
+            <Text style={styles.loggedValues}>
+              {isBodyweight
+                ? loggedData.weight
+                  ? `+${loggedData.weight} lbs · ${loggedData.reps} reps`
+                  : `${loggedData.reps} reps`
+                : `${loggedData.weight} lbs · ${loggedData.reps} reps`}
+            </Text>
+            {isPR && <PRBadge style={styles.prBadge} />}
+          </View>
         </View>
         <Ionicons name="checkmark-circle" size={22} color={colors.success} />
       </TouchableOpacity>
@@ -157,6 +174,7 @@ type ExerciseSectionProps = {
   errorMap: ErrorMap;
   loadingSetId: number | null;
   reEditedIds: ReadonlySet<number>;
+  prSetIds: ReadonlySet<number>;
   onInputChange: (setId: number, field: 'weight' | 'reps', value: string) => void;
   onLog: (set: ExerciseSet, weight: string, reps: string) => void;
   onReEdit: (setId: number) => void;
@@ -169,6 +187,7 @@ function ExerciseSection({
   errorMap,
   loadingSetId,
   reEditedIds,
+  prSetIds,
   onInputChange,
   onLog,
   onReEdit,
@@ -204,6 +223,7 @@ function ExerciseSection({
             isLoading={loadingSetId === set.id}
             error={errorMap[set.id]}
             isBodyweight={isBodyweight}
+            isPR={prSetIds.has(set.id)}
             onInputChange={(field, value) => onInputChange(set.id, field, value)}
             onLog={() => {
               const inp = inputMap[set.id] ?? { weight: '', reps: String(set.reps ?? '') };
@@ -229,6 +249,7 @@ export default function ActiveWorkoutScreen() {
   const { data: workout, isLoading, isFetching, isError, refetch } = useGetWorkoutQuery(workoutIdNum, {
     skip: !workoutId,
   });
+  const { data: personalRecords = [] } = useGetPersonalRecordsQuery({});
 
   // Force-refetch on focus so stale cached data (completed: false) never blocks the redirect
   useFocusEffect(useCallback(() => { if (workoutId) refetch(); }, [workoutId, refetch]));
@@ -244,6 +265,42 @@ export default function ActiveWorkoutScreen() {
   // Tracks sets the user has chosen to re-edit so API-logged sets (set.completed=true) can exit locked state
   const [reEditedIds, setReEditedIds] = useState<ReadonlySet<number>>(new Set());
   const [restTimer, setRestTimer] = useState<{ duration: number } | null>(null);
+  const [prToastState, setPrToastState] = useState<PRToastState>(null);
+  const [prSummaryData, setPrSummaryData] = useState<NewPersonalRecord[] | null>(null);
+  // PRs detected this session via is_new_pr — for immediate badge feedback
+  const [sessionPrSetIds, setSessionPrSetIds] = useState<ReadonlySet<number>>(new Set());
+
+  // Derive PR set IDs from committed personal records + workout data so badges
+  // survive navigation away and back (sessionPrSetIds resets on unmount).
+  const derivedPrSetIds = useMemo((): ReadonlySet<number> => {
+    if (!workout) return new Set();
+    const bestByExercise: Record<number, number> = {};
+    personalRecords.forEach((pr) => {
+      const cur = bestByExercise[pr.exercise_id] ?? 0;
+      if (pr.estimated_1rm > cur) bestByExercise[pr.exercise_id] = pr.estimated_1rm;
+    });
+    const ids = new Set<number>();
+    workout.workout_exercises.forEach((we) => {
+      const storedBest = bestByExercise[we.exercise.id] ?? null;
+      const completedSets = we.exercise_sets.filter(
+        (s) => s.completed && s.weight != null && s.weight > 0 && s.reps != null && s.reps > 0
+      );
+      if (completedSets.length === 0) return;
+      const bestSet = completedSets.reduce((best, s) => {
+        const rm = s.reps! === 1 ? s.weight! : s.weight! * (1 + s.reps! / 30);
+        const bRm = best.reps! === 1 ? best.weight! : best.weight! * (1 + best.reps! / 30);
+        return rm > bRm ? s : best;
+      });
+      const bestRm = bestSet.reps! === 1 ? bestSet.weight! : bestSet.weight! * (1 + bestSet.reps! / 30);
+      if (storedBest !== null && bestRm > storedBest) ids.add(bestSet.id);
+    });
+    return ids;
+  }, [workout, personalRecords]);
+
+  const prSetIds = useMemo(
+    () => new Set([...sessionPrSetIds, ...derivedPrSetIds]),
+    [sessionPrSetIds, derivedPrSetIds]
+  );
 
   // Seed inputMap with template reps once workout data arrives (weight stays empty per FR-003)
   useEffect(() => {
@@ -260,12 +317,13 @@ export default function ActiveWorkoutScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workout?.id]);
 
-  // Redirect if workout is already completed
+  // Redirect if workout is already completed — but not while the PR summary modal is
+  // showing (prSummaryData set), since doComplete handles navigation after dismissal.
   useEffect(() => {
-    if (workout?.completed) {
+    if (workout?.completed && !prSummaryData) {
       router.replace('/home');
     }
-  }, [workout?.completed, router]);
+  }, [workout?.completed, prSummaryData, router]);
 
   const handleInputChange = (setId: number, field: 'weight' | 'reps', value: string) => {
     setInputMap((prev) => ({
@@ -299,7 +357,7 @@ export default function ActiveWorkoutScreen() {
     const timeoutId = setTimeout(() => promise.abort(), 10000);
 
     try {
-      await promise.unwrap();
+      const result = await promise.unwrap();
       clearTimeout(timeoutId);
       setLoggedMap((prev) => ({
         ...prev,
@@ -307,6 +365,25 @@ export default function ActiveWorkoutScreen() {
       }));
       setReEditedIds((prev) => { const next = new Set(prev); next.delete(set.id); return next; });
       setRestTimer({ duration: findRestDuration(set.id) });
+
+      const pr = result.personal_record;
+      if (pr.is_new_pr && pr.previous_estimated_1rm !== null) {
+        const we = workout?.workout_exercises.find((w) => w.exercise_sets.some((s) => s.id === set.id));
+        if (we) {
+          const exerciseSetIds = new Set(we.exercise_sets.map((s) => s.id));
+          setSessionPrSetIds((prev) => {
+            const next = new Set([...prev].filter((id) => !exerciseSetIds.has(id)));
+            next.add(set.id);
+            return next;
+          });
+          setPrToastState({
+            exerciseName: we.exercise.name,
+            previous1RM: pr.previous_estimated_1rm ?? 0,
+            current1RM: pr.new_estimated_1rm ?? 0,
+          });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
     } catch {
       clearTimeout(timeoutId);
       setErrorMap((prev) => ({
@@ -336,8 +413,12 @@ export default function ActiveWorkoutScreen() {
 
     const doComplete = async () => {
       try {
-        await completeWorkout(workoutIdNum).unwrap();
-        router.replace('/home');
+        const result = await completeWorkout(workoutIdNum).unwrap();
+        if (result.new_personal_records.length > 0) {
+          setPrSummaryData(result.new_personal_records);
+        } else {
+          router.replace('/home');
+        }
       } catch (err: any) {
         // 422 = already completed (Workout::InvalidTransition). Treat as success.
         if (err?.status === 422) {
@@ -358,7 +439,7 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  if (isLoading || isFetching || workout?.completed) {
+  if ((isLoading || isFetching || workout?.completed) && !prSummaryData) {
     return (
       <Screen variant="dark">
         <ActivityIndicator size="large" color={colors.pureWhite} style={styles.loader} />
@@ -412,6 +493,7 @@ export default function ActiveWorkoutScreen() {
             errorMap={errorMap}
             loadingSetId={loadingSetId}
             reEditedIds={reEditedIds}
+            prSetIds={prSetIds}
             onInputChange={handleInputChange}
             onLog={handleLog}
             onReEdit={handleReEdit}
@@ -425,6 +507,27 @@ export default function ActiveWorkoutScreen() {
           duration={restTimer.duration}
           onComplete={() => setRestTimer(null)}
           onSkip={() => setRestTimer(null)}
+        />
+      )}
+
+      {prToastState && (
+        <PRToast
+          key={`${prToastState.exerciseName}-${prToastState.current1RM}`}
+          exerciseName={prToastState.exerciseName}
+          previous1RM={prToastState.previous1RM}
+          current1RM={prToastState.current1RM}
+          onDismiss={() => setPrToastState(null)}
+          bottomOffset={76}
+        />
+      )}
+
+      {prSummaryData && (
+        <PRSummaryModal
+          prs={prSummaryData}
+          onDone={() => {
+            setPrSummaryData(null);
+            router.replace('/home');
+          }}
         />
       )}
 
@@ -630,6 +733,14 @@ const styles = StyleSheet.create({
   },
   inputUnitOptional: {
     opacity: 0.5,
+  },
+  loggedValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  prBadge: {
+    marginLeft: spacing.xs,
   },
   inlineError: {
     ...typography.caption,
