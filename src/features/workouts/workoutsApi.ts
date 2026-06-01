@@ -93,6 +93,26 @@ export type NewPersonalRecord = {
   previous_best: number | null;
 };
 
+export type WorkoutCursor = {
+  before_date: string;
+  before_id: number;
+};
+
+export type WorkoutPageMeta = {
+  has_more: boolean;
+  next_cursor: WorkoutCursor | null;
+};
+
+export type WorkoutsPageResponse = {
+  data: WorkoutDetail[];
+  meta: WorkoutPageMeta;
+};
+
+export type GetWorkoutsPageArg = {
+  cursor?: WorkoutCursor;
+  limit?: number;
+};
+
 export const workoutsApi = createApi({
   reducerPath: 'workoutsApi',
   baseQuery,
@@ -154,6 +174,19 @@ export const workoutsApi = createApi({
       },
       providesTags: ['PersonalRecords'],
     }),
+    getWorkoutsPage: builder.query<WorkoutsPageResponse, GetWorkoutsPageArg>({
+      query: ({ cursor, limit = 20 } = {}) => {
+        const params = new URLSearchParams();
+        params.set('completed', 'true');
+        params.set('limit', String(limit));
+        if (cursor) {
+          params.set('before_date', cursor.before_date);
+          params.set('before_id', String(cursor.before_id));
+        }
+        return `/api/v1/workouts?${params.toString()}`;
+      },
+      providesTags: ['Workouts'],
+    }),
   }),
 });
 
@@ -164,4 +197,6 @@ export const {
   useCompleteWorkoutMutation,
   useGetWorkoutsQuery,
   useGetPersonalRecordsQuery,
+  useGetWorkoutsPageQuery,
+  useLazyGetWorkoutsPageQuery,
 } = workoutsApi;
