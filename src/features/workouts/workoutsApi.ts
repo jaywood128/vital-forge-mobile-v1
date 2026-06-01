@@ -55,7 +55,9 @@ export type WorkoutDetail = {
   completed: boolean;
   started_at: string | null;
   completed_at: string | null;
+  duration_minutes: number | null;
   workout_date: string;
+  workout_type: string | null;
   workout_template_id: number | null;
   workout_exercises: WorkoutExerciseDetail[];
 };
