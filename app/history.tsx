@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Text, ActivityIndicator, StyleSheet, Alert, View } from 'react-native';
-import { Pressable } from 'react-native';
+import { FlatList, Text, ActivityIndicator, StyleSheet, Alert, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   useLazyGetWorkoutsPageQuery,
