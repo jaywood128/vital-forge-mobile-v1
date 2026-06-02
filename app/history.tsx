@@ -1,25 +1,65 @@
-import { useEffect } from 'react';
-import { FlatList, Pressable, Text, ActivityIndicator, StyleSheet, Alert, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { FlatList, Text, ActivityIndicator, StyleSheet, Alert, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useGetWorkoutsQuery, WorkoutDetail } from '../src/features/workouts/workoutsApi';
-import { Screen, WorkoutHistoryCard } from '../src/components/ui';
+import {
+  useLazyGetWorkoutsPageQuery,
+  WorkoutDetail,
+  WorkoutCursor,
+} from '../src/features/workouts/workoutsApi';
+import { Screen, WorkoutHistoryCard, WorkoutHistorySkeletonCard } from '../src/components/ui';
 import { colors, spacing, typography } from '../src/theme';
+
+const PAGE_SIZE = 20;
+const SKELETON_COUNT = 3;
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { data, isLoading, isError } = useGetWorkoutsQuery();
+  const [triggerGetPage, { isFetching }] = useLazyGetWorkoutsPageQuery();
+  const [workouts, setWorkouts] = useState<WorkoutDetail[]>([]);
+  const [cursor, setCursor] = useState<WorkoutCursor | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  const loadPage = useCallback(
+    async (pageCursor?: WorkoutCursor) => {
+      if (isFetching) return;
+      try {
+        const result = await triggerGetPage({ cursor: pageCursor, limit: PAGE_SIZE }).unwrap();
+        setWorkouts((prev) => (pageCursor ? [...prev, ...result.data] : result.data));
+        setCursor(result.meta.next_cursor);
+        setHasMore(result.meta.has_more);
+      } catch {
+        Alert.alert('Error', 'Could not load workout history. Please try again.');
+      } finally {
+        setInitialLoading(false);
+      }
+    },
+    [isFetching, triggerGetPage]
+  );
 
   useEffect(() => {
-    if (isError) {
-      Alert.alert('Error', 'Could not load workout history. Please try again.');
+    loadPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleEndReached = useCallback(() => {
+    if (!isFetching && hasMore && cursor) {
+      loadPage(cursor);
     }
-  }, [isError]);
+  }, [isFetching, hasMore, cursor, loadPage]);
 
-  const completed = (data ?? [])
-    .filter((w) => w.completed)
-    .sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime());
+  const renderFooter = () => {
+    if (!isFetching || initialLoading) return null;
+    return (
+      <>
+        {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+          <WorkoutHistorySkeletonCard key={`skeleton-${i}`} />
+        ))}
+      </>
+    );
+  };
 
-  if (isLoading) {
+  if (initialLoading) {
     return (
       <Screen>
         <ActivityIndicator size="large" color={colors.electricBlueLight} style={styles.loader} />
@@ -35,7 +75,7 @@ export default function HistoryScreen() {
       </Pressable>
       <Text style={styles.heading}>Workout History</Text>
       <FlatList<WorkoutDetail>
-        data={completed}
+        data={workouts}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <WorkoutHistoryCard
@@ -43,12 +83,15 @@ export default function HistoryScreen() {
             onPress={() => router.push(`/workout-detail?id=${item.id}`)}
           />
         )}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={renderFooter}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No workouts yet. Start your first session!</Text>
           </View>
         }
-        contentContainerStyle={completed.length === 0 ? styles.emptyList : undefined}
+        contentContainerStyle={workouts.length === 0 ? styles.emptyList : undefined}
       />
     </Screen>
   );

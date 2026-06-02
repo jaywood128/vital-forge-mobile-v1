@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.vital-forge-mobile-v1"
+      "bundleIdentifier": "com.vitalforge.app"
     },
     "android": {
       "adaptiveIcon": {
