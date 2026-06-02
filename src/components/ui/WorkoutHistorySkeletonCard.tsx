@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing } from '../../theme';
 
 export function WorkoutHistorySkeletonCard() {
   const shimmer = useRef(new Animated.Value(0)).current;
