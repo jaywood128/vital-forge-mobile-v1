@@ -1,15 +1,14 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { render, act, fireEvent } from '@testing-library/react-native';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, back: jest.fn() }),
 }));
 
-const mockUseGetWorkoutsQuery = jest.fn();
+const mockTrigger = jest.fn();
 jest.mock('../../src/features/workouts/workoutsApi', () => ({
-  useGetWorkoutsQuery: () => mockUseGetWorkoutsQuery(),
+  useLazyGetWorkoutsPageQuery: () => [mockTrigger, { isFetching: false }],
 }));
 
 import HistoryScreen from '../../app/history';
@@ -20,7 +19,9 @@ const makeWorkout = (overrides: Record<string, unknown> = {}) => ({
   completed: true,
   started_at: '2026-05-14T09:00:00Z',
   completed_at: '2026-05-14T10:00:00Z',
+  duration_minutes: 60,
   workout_date: '2026-05-14',
+  workout_type: 'Strength',
   workout_template_id: 1,
   workout_exercises: [
     {
@@ -45,57 +46,68 @@ const makeWorkout = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const pageResult = (workouts: ReturnType<typeof makeWorkout>[], hasMore = false) => ({
+  unwrap: () => Promise.resolve({
+    data: workouts,
+    meta: { has_more: hasMore, next_cursor: null },
+  }),
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
 describe('HistoryScreen', () => {
-  it('renders loading indicator when isLoading is true', () => {
-    mockUseGetWorkoutsQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false });
-    const { getByTestId, UNSAFE_getByType } = render(<HistoryScreen />);
+  it('renders loading indicator on initial load', () => {
+    // Never resolves — keeps initialLoading: true
+    mockTrigger.mockReturnValue({ unwrap: () => new Promise(() => {}) });
+    const { UNSAFE_getByType } = render(<HistoryScreen />);
     const { ActivityIndicator } = require('react-native');
     expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
-  it('renders a card for each completed workout', () => {
+  it('renders a card for each completed workout', async () => {
     const workouts = [makeWorkout({ id: 1, name: 'Push Day' }), makeWorkout({ id: 2, name: 'Pull Day' })];
-    mockUseGetWorkoutsQuery.mockReturnValue({ data: workouts, isLoading: false, isError: false });
+    mockTrigger.mockReturnValue(pageResult(workouts));
     const { getByText } = render(<HistoryScreen />);
+    await act(async () => {});
     expect(getByText('Push Day')).toBeTruthy();
     expect(getByText('Pull Day')).toBeTruthy();
   });
 
-  it('shows exercise count and sets logged on each card', () => {
-    mockUseGetWorkoutsQuery.mockReturnValue({ data: [makeWorkout()], isLoading: false, isError: false });
+  it('shows exercise count and sets on each card', async () => {
+    mockTrigger.mockReturnValue(pageResult([makeWorkout()]));
     const { getByText } = render(<HistoryScreen />);
-    expect(getByText('1 exercises')).toBeTruthy();
-    expect(getByText('2 sets logged')).toBeTruthy();
+    await act(async () => {});
+    expect(getByText(/1 exercise/)).toBeTruthy();
+    expect(getByText(/2 sets/)).toBeTruthy();
   });
 
-  it('navigates to workout-detail with the correct id when a card is tapped', () => {
-    mockUseGetWorkoutsQuery.mockReturnValue({ data: [makeWorkout({ id: 7 })], isLoading: false, isError: false });
+  it('navigates to workout-detail with the correct id when a card is tapped', async () => {
+    mockTrigger.mockReturnValue(pageResult([makeWorkout({ id: 7 })]));
     const { getByText } = render(<HistoryScreen />);
+    await act(async () => {});
     fireEvent.press(getByText('Push Day'));
     expect(mockPush).toHaveBeenCalledWith('/workout-detail?id=7');
   });
 
-  it('shows the empty state message when no completed workouts exist', () => {
-    mockUseGetWorkoutsQuery.mockReturnValue({ data: [], isLoading: false, isError: false });
+  it('shows the empty state message when no completed workouts exist', async () => {
+    mockTrigger.mockReturnValue(pageResult([]));
     const { getByText } = render(<HistoryScreen />);
+    await act(async () => {});
     expect(getByText('No workouts yet. Start your first session!')).toBeTruthy();
   });
 
   it.todo(
-    // Scenario: API call fails (isError: true)
+    // Scenario: API call throws (trigger rejects)
     // Expected: Alert.alert is called with an error message
-    // Key assertion: spy on Alert.alert, render with isError: true, verify it was called
+    // Key assertion: mock trigger to reject, render, verify Alert.alert was called
     'shows an alert when the API call fails'
   );
 
   it.todo(
-    // Scenario: data contains a mix of completed: true and completed: false workouts
-    // Expected: only completed workouts appear in the FlatList; incomplete ones are filtered out
-    // Key assertion: render with mixed data, verify the incomplete workout name is NOT in the output
+    // Scenario: backend already filters completed=true so all returned workouts are completed
+    // The screen no longer does client-side filtering — this is enforced server-side via the paginated endpoint
     'filters out non-completed workouts from the list'
   );
 });
